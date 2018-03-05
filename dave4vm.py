@@ -12,10 +12,8 @@ Useful links with alternative methods to reform and convolve:
 @author: andrechicrala
 """
 import numpy as np
-import csv
-
-from pydave4vm import dave4vm_matrix
-from pydave4vm import matrix_test
+from pydave4vm import dave4vm_matrix_sp
+from scipy.linalg import lstsq
 
 #testing if the package was imported.
 def dave4vmpy_test_import():
@@ -25,7 +23,12 @@ def dave4vmpy_test_import():
 #Calculating the trace of a 100 x imgY x imgX size matrix
 def my_tracer(AM):
     
-    trc = np.zeros((471,949))
+    #getting the dimensions of the entry matrix
+    #AM shape should be 100, y-dim, x-dim
+    dimensions = AM.shape
+    
+    #creating an empty array with the correct dimensions
+    trc = np.zeros((dimensions[1],dimensions[2]))
     
     for i in range(0,8):
         trc = trc + AM[(i*10)+i] 
@@ -38,31 +41,24 @@ def my_tracer(AM):
 #'Criar' translates from create. 
 def criar_array(dims):
     
-    base_array = np.zeros((dims[0],dims[1]))
+    base_array = np.zeros((dims[1],dims[2]))
     
     return(base_array)
 
 
 #the actual thing
-def calculate_dave4vm(magvm,wsize):
+def calculate_dave4vm(magvm,wsize, norm = []):
     
     #Copying the dictionary to a variable    
     mag_dic = magvm
     
     #Defining arrays
     #Taking the shape of bz to later create arrays with the same shape.
-    sz = mag_dic['bz'].shape
+    #sz = mag_dic['bz'].shape
     
     
     #Constructing the weighting functions.
-    nw = int(2*int(wsize/2)+1)
-    
-    #
-    #
-    ######the part below will have to be automated for the windowsize#########
-    #
-    #
-    
+    nw = int(2*int(wsize/2)+1)    
     
     #Creating a numpy array based on the windowsize
     nw2 = np.subtract(np.array(range(0,nw)),10)
@@ -86,15 +82,31 @@ def calculate_dave4vm(magvm,wsize):
     psfxy = np.multiply(np.multiply(psf,x),y)
     
     
-    #Keeping those guys in a dictionary.
-   # kernel = {'psf': psf, 'psfx': psfx, 'psfy': psfy, 'psfxx': psfxx,
-    #          'psfyy': psfyy, 'psfxy': psfxy}
+    #if norm is set to true this bit shall manually normalize the kernel
+    #manually normalizing the kernel
+    if norm == True:
+        #dostuff
+        psfx = psfx/np.sum(psfx)
+        #psfy = psfy/np.sum(psfy)
+        psfxx = psfxx/np.sum(psfxx)
+        psfyy = psfyy/np.sum(psfyy)
+        #psfxy = psfxy/np.sum(psfxy)
     
+    
+    #Keeping those guys in a dictionary.
+    kernel = {'psf': psf, 'psfx': psfx, 'psfy': psfy, 'psfxx': psfxx,
+              'psfyy': psfyy, 'psfxy': psfxy}
+    
+    
+    #####
+    #####The original version uses the astropy convolve
+    #####dave4vm_matrixV2 uses scipy library
+    #####
     
     #Calling the next function!
     #the_matrix(bx, bxx, bxy, by, byx, byy, bz, bzx, bzy,
     #           bzt, psf, psfx, psfy, psfxx, psfyy, psfxy):
-    AM = dave4vm_matrix.the_matrix(mag_dic['bx'], mag_dic['bxx'], 
+    AM = dave4vm_matrix_sp.the_matrix(mag_dic['bx'], mag_dic['bxx'], 
                                    mag_dic['bxy'], mag_dic['by'], 
                                    mag_dic['byx'], mag_dic['byy'],
                                    mag_dic['bz'], mag_dic['bzx'],
@@ -102,26 +114,31 @@ def calculate_dave4vm(magvm,wsize):
                                    psf, psfx, psfy, psfxx, psfyy, psfxy)
     
     
+    #getting the dimensions of AM
+    dims = AM.shape
+    
+    
     #Estimating the trace
     #This line will sum each 'lay' of the AM matrix
     trc = my_tracer(AM)
     #Indexing the points where the trace is greater than a given threshold
-    index = np.where(trc > 1000)
+    index = np.where(trc > 1.0)
     
     #Reshaping, this will make it easier to separate the values for the least
     #squares function to calculate.
-    AM = np.reshape(AM,(10,10,471,949))
+    #AM = np.reshape(AM,(10,10,sz[0],sz[1]))
+    AM = np.reshape(AM,(10,10,dims[1],dims[2]))
     
     #creating lists to receive the data
-    U0 = criar_array(sz)
-    V0 = criar_array(sz)
-    UX = criar_array(sz)
-    VY = criar_array(sz)
-    UY = criar_array(sz)
-    VX = criar_array(sz)
-    W0 = criar_array(sz)
-    WX = criar_array(sz)
-    WY = criar_array(sz)
+    U0 = criar_array(dims)
+    V0 = criar_array(dims)
+    UX = criar_array(dims)
+    VY = criar_array(dims)
+    UY = criar_array(dims)
+    VX = criar_array(dims)
+    W0 = criar_array(dims)
+    WX = criar_array(dims)
+    WY = criar_array(dims)
     
     
     #Building the for loop to go over the "good" pixels
@@ -155,7 +172,8 @@ def calculate_dave4vm(magvm,wsize):
         #held on the first item of the tuple.
         #This method also uses the divide and conquer algorithm
         #http://drsfenner.org/blog/2015/12/three-paths-to-least-squares-linear-regression/
-        vector = np.linalg.lstsq(GA, FA)
+        #vector = np.linalg.lstsq(GA, FA)#, rcond = None)
+        vector = lstsq(GA, FA, lapack_driver = 'gelss')
         
         #Assigning the results to the respective variables
         U0[y,x] = vector[0][0]
@@ -171,9 +189,17 @@ def calculate_dave4vm(magvm,wsize):
         
     #Creating a dictionary to hold the final results
     #v = {'U0': }  
-    vel4vm = np.stack((U0,V0,UX,VY,UY,VX,W0,WX,WY), axis = 0)
+    #vel4vm = np.stack((U0,V0,UX,VY,UY,VX,W0,WX,WY), axis = 0)
     
-    return(vel4vm,trc)
+    #Organize this as dic?
+    vel4vm = {'U0': U0, 'UX': UX, 'UY': UY,
+              'V0': V0, 'VX': VX, 'VY': VY,
+              'W0': W0, 'WX': WX, 'WY': WY,
+              'Window_size': wsize}
+    
+    #produce log??
+    
+    return(vel4vm,trc, kernel)
     
     
 
