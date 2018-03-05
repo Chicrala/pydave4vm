@@ -155,6 +155,34 @@ def identificar_extremos(data, filtro):
         new_data[y,x] = 0
         
     return(new_data)
+    
+#This function is similar to filtro_media however, this time, the values
+#will be replaced by 0 for the ones that satisfy the condition and +-1 for 
+#the aberrant values.
+def identificar_extremos_abs(data, filtro):
+    
+    #Copying the data
+    new_data = copy.copy(data)
+    #taking the absolute value
+    new_data_abs = np.sqrt(np.multiply(new_data, new_data))
+    #Calculating the mean value of the dataset
+    mean = np.mean(new_data_abs)
+    #Searching where the values deviates n times from the mean
+    index = np.where(new_data_abs > filtro * mean)
+    
+    #fetching the dimensions
+    dimensions = new_data.shape
+    #create zeroes array
+    base = np.zeros((dimensions[0],dimensions[1]))
+    
+    #Substituting the positive values
+    for i in range(0,len(index[0])):
+        y = index[0][i]
+        x = index[1][i]        
+        base[y,x] = 1
+    
+        
+    return(base)
 
 #Similarly to identificar_extremos, this function will mark where the values
 #in the given dataset are nans with +1 and the 'real' values with 0
@@ -258,8 +286,3 @@ def filtro_neighbour(data,filtro):
         new_data[y,x] = min(values, key=lambda x:abs(mean-x)) 
     
     return(new_data)
-    
-    
-
-
-#teste = filtro_neighbour(vel4vm[3],10)
