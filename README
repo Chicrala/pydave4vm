@@ -51,6 +51,8 @@ Changes:
 It was written in a way that is as faithful as possible to the original code.
 Testing and comparing the performance of this version against the original code is ongoing.
 
+2018-01-05: Ipython notebook and test data added. Some bugs were corrected but the major problems still persists.
+
 ---------------------------------------
 
 Original License:
@@ -87,3 +89,5 @@ MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 ---------------------------------------
 
+Link for download the original code written in IDL:
+https://ccmc.gsfc.nasa.gov/lwsrepository/index.php
