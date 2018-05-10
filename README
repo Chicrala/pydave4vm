@@ -10,15 +10,8 @@ The goal of this work is not only to re-design an existing tool to better suit t
 ultimately deliver a tool that can be used by the solar physics community for free supporting initiatives such as the 
 SunPy (http://sunpy.org/). 
 
-The current strugles of this code are: 
-
-- The results obtained using IDL and python starts to deviate, mostly, for values close to 10^{-7}.
-- The code is taking more time than expected to run indicating that it could be strongly improved.
-
-What is to be done:
-
-- Check the reliability of the results.
-- Optimize the algorithm for python.
+Currently, the version within the Jupyter Notebook was already tested for some magnetograms and is capable of reproducing
+the IDL version results.
 
 ---------------------------------------
 
@@ -52,6 +45,8 @@ It was written in a way that is as faithful as possible to the original code.
 Testing and comparing the performance of this version against the original code is ongoing.
 
 2018-01-05: Ipython notebook and test data added. Some bugs were corrected but the major problems still persists.
+
+2018-05-10: New Ipython notebook added with a working version.
 
 ---------------------------------------
 
