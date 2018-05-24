@@ -48,6 +48,8 @@ Testing and comparing the performance of this version against the original code 
 
 2018-05-10: New Ipython notebook added with a working version.
 
+2018-05-24: Scipy.signal convolve and numpy solve introduced improving the code speed.
+
 ---------------------------------------
 
 Original License:
