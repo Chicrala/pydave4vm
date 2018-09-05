@@ -7,8 +7,7 @@ version (2018-02-12) aims to do. Once the results are considered reliable, the m
 and also make it more user friendly.
 
 The goal of this work is not only to re-design an existing tool to better suit the needs of my current work but also to 
-ultimately deliver a tool that can be used by the solar physics community for free supporting initiatives such as the 
-SunPy (http://sunpy.org/). 
+ultimately deliver a tool that can be used by the solar physics community for free.
 
 Currently, the version within the Jupyter Notebook was already tested for some magnetograms and is capable of reproducing
 the IDL version results.
