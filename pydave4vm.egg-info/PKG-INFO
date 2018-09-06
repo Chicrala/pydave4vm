@@ -1,0 +1,50 @@
+Metadata-Version: 1.1
+Name: pydave4vm
+Version: 1
+Summary: An attempt to make a working version in python of the dave4vm software that was originally written in IDL. 
+Home-page: https://github.com/Chicrala/pydave4vm
+Author: Andre Chicrala
+Author-email: andrechicrala@gmail.com
+License: UNKNOWN
+Description-Content-Type: UNKNOWN
+Description: pydave4vm
+        =========
+        
+        .. image:: https://img.shields.io/pypi/v/pydave4vm.svg
+            :target: https://pypi.python.org/pypi/pydave4vm
+            :alt: Latest PyPI version
+        
+        .. image:: https://travis-ci.org/borntyping/cookiecutter-pypackage-minimal.png
+           :target: https://travis-ci.org/borntyping/cookiecutter-pypackage-minimal
+           :alt: Latest Travis CI build status
+        
+        An attempt to make a working version in python of the dave4vm software that was originally written in IDL. 
+        
+        Usage
+        -----
+        
+        Installation
+        ------------
+        
+        Requirements
+        ^^^^^^^^^^^^
+        
+        Compatibility
+        -------------
+        
+        Licence
+        -------
+        
+        Authors
+        -------
+        
+        `pydave4vm` was written by `Andre Chicrala <andrechicrala@gmail.com>`_.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
