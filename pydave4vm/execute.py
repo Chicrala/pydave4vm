@@ -459,7 +459,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
     
     return
     
-def execute_configs():
+def execute_configs(path = None):
     '''
     This code will read multiple config files
     and execute the 'prepare' routine for each
@@ -467,11 +467,14 @@ def execute_configs():
     analysis for each region featured on the
     file.
     '''
+    #checking if path to configs exists
+    if path is None:
+        path = '/Users/andrechicrala/Downloads/configs/'
     
     #searching for the config files paths
-    path = glob.glob('/Users/andrechicrala/Downloads/configs/*.ini')
+    path = glob.glob(path+'*.ini')
     #defining the path to move the config file to
-    path_to_move = '/Users/andrechicrala/Downloads/configs/used/'
+    path_to_move = path+'used/'
     
     #iterating for each file
     for config in path:
