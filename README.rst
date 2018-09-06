@@ -28,11 +28,12 @@ the IDL version results.
 ---------------------------------------
 
 Description of the modules:
-- call_v1.py: This module organize the fits using the cubitos.py module and should be, when the code is properly done, 
+- call_v1.py: This module organize a pair of fits using the cubitos.py module and should be, when the code is properly done, 
 where the user will interact with the algorithm to personalize the size of the spatial grid, time difference and what data 
-will be used.
+will be used. The other versions can loop over multiple files and insert the results in a database however they have extra
+functionalities that rely in some scripts that are not here.
 
-- cubitos.py: This module scan a folder for the Br, Btheta, Bphi .fits files and create data cubes with them.
+- cubitos.py: This module scan a folder for the Br, Btheta, Bphi .fits files and create data cubes with them using Sunpy.
 
 - do_dave4vm_and.py: Here data is pre-processed to be fed on the dave4vm call using the odiffxy.py module and calculating
 averages between the .fits files. This module returns the dictionary with the variables that are fed into dave4vm.py 
@@ -61,6 +62,8 @@ Testing and comparing the performance of this version against the original code 
 2018-05-10: New Ipython notebook added with a working version.
 
 2018-05-24: Scipy.signal convolve and numpy solve introduced improving the code speed.
+
+2018-08-06: Documentation improvements in some codes and reorganization of github folder.
 
 ---------------------------------------
 
