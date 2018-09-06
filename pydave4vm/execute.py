@@ -38,6 +38,10 @@ Also a new module was added to prevent problems related to missing files
 during the download. The check_fits module will delete any files that do 
 not exist in all the three components.
 
+execute:
+Essentially version 5.1. The name has been changed since this will be the 
+final version which I intend to exert control over.
+
 
 use con and get like here:
     https://gist.github.com/maedoc/b5b3cd91aaa59ec573f9
