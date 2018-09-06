@@ -490,5 +490,7 @@ def execute_configs(path = None):
     return
 
 if __name__ == '__main__':
-    
-    configs()
+    '''
+    test zone
+    '''
+    execute_configs()
