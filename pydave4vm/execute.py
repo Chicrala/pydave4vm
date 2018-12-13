@@ -113,7 +113,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
     logging.basicConfig(filename = str(harpnum)+'.log',
                         level=logging.DEBUG)
     
-    #logging
+    #logging when the analysis started
     logging.info('Analysis started at: ' + str(analysis_start))
     
     #checking if data is already in the disk
@@ -246,6 +246,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             
         #adding the atribute exception    
         except AttributeError:
+            session.rollback()
             logging.debug('AR not inserted into the database.')
             print('AR not inserted into the database.')
             
@@ -404,6 +405,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
                 session.commit()
                 
             except AttributeError:
+                session.rollback()
                 logging.debug('Timestamp ' + str(t2) + ' not created.')
                 print('Timestamp ' + str(t2) + ' not created.')
                 
