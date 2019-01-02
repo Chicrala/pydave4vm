@@ -9,15 +9,9 @@ pydave4vm
    :target: https://travis-ci.org/borntyping/cookiecutter-pypackage-minimal
    :alt: Latest Travis CI build status
 
-An attempt to make a working version in python of the dave4vm software that was originally written in IDL. 
-
-This work is an attempt to reproduce the differential affine velocity estimator for vector magnetograms (DAVE4VM) developed by
+This work reproduces the differential affine velocity estimator for vector magnetograms (DAVE4VM) developed by
 dr. P.W. Shuck. At first this work was published in The Astrophysical Journal 683:1134Y1152, 2008 August 20 - 
-TRACKING VECTOR MAGNETOGRAMS WITH THE MAGNETIC INDUCTION EQUATION - P.W. Shuck.
-
-At first, it would be ideal to translate the algorithm as close as possible from IDL to python which is what this first 
-version (2018-02-12) aims to do. Once the results are considered reliable, the main objective will be to optimize the code 
-and also make it more user friendly.
+TRACKING VECTOR MAGNETOGRAMS WITH THE MAGNETIC INDUCTION EQUATION - P.W. Shuck. Essentially it is a working version in python of dave4vm that was originally written in IDL.
 
 The goal of this work is not only to re-design an existing tool to better suit the needs of my current work but also to 
 ultimately deliver a tool that can be used by the solar physics community for free.
