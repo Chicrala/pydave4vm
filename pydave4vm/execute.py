@@ -99,84 +99,79 @@ def prepare(config_path, downloaded = None, delete_files = None):
         
     '''
     
-    #creating a timestamp for the analysis start:
+    # Creating a timestamp for the analysis start.
     analysis_start = datetime.now()
     
-    #definning the path for the config file
-    #config_path = glob.glob('/Users/andrechicrala/Downloads/configs/*.ini')
-    
-    #reading the config file
+    # Reading the config file.
     harpnum, tstart, extent, cadence, dbaddress,\
     window_size, = myconfig.readconfig(config_path)
     
-    #creating the log file
+    # Starting the log file.
     logging.basicConfig(filename = str(harpnum)+'.log',
                         level=logging.DEBUG)
     
-    #logging when the analysis started
+    # Logging when the analysis started.
     logging.info('Analysis started at: ' + str(analysis_start))
     
-    #checking if data is already in the disk
+    # Checking if data is already in the disk.
     if downloaded == None:
         
-        #check in the standard path if file exists
+        # Check in the standard path if file exists.
         std_path = '/Users/andrechicrala/Downloads/'+ str(harpnum)+'/'
-        #if it don't, download
+        # If it don't, download it.
         if os.path.exists(std_path) != True:
         
-            #downloading data and returning the path
+            # Downloading data and returning the path.
             try:
                 path = downloaddata.downdrms(harpnum = harpnum,
                                              tstart = tstart,
                                              extent = extent,
                                              cadence = cadence)
                 
-                
+            # Add to the log if try is sucessfull or not.
             except RuntimeError:
                 logging.debug('The download was not complete.')
                 print('The download was not complete.')
                 
-            #add the log if try is sucessfull 
+            
             else:
-                #logging
                 logging.info('Downloads finished at: ' + str(datetime.now()))
                 
-        #if it does use the files there
+        # If it does use the files there.
         else:
             path = std_path
     
-    #assigning the path to the files        
+    # Assigning the path to the files.       
     else:
         
-        #checking if the path exists
+        # Checking if the path exists.
         while os.path.exists(downloaded) != True:
-            #inputing the path
+            # Inputing the path.
             downloaded = str(input('Inform the path to the downloaded files enclosing folder: '))
         
-        #logging
+        # Logging the output.
         logging.info('The files were already saved in the disk.')
         print('The files were already saved in the disk.')
         
-        #assigning the path
+        # Assigning the path.
         path = downloaded
         
-    #checking how many files are inside the directory
+    # Checking how many files are inside the directory.
     number_of_files = len(fnmatch.filter(os.listdir(path),'*.fits'))
     
-    #and taking the results to the log.
+    # And taking the results to the log.
     logging.info('There are ' + str(number_of_files) + 
                 ' .fits files saved in the disk.')
     print('There are ' + str(number_of_files) + 
                 ' .fits files saved in the disk.')
     
-    #deleting variable
+    # Deleting variable.
     del number_of_files
                     
-    #Checking if there are 3 files for each
-    #magnetic field component
+    # Checking if there are 3 files for each magnetic field component.
     Br_unique, Bt_unique, Bp_unique = check_fits.check_fits(path)
     
-    #logging any missing files
+    # Logging any missing files.
     if Br_unique == [] and Bt_unique == [] and Bp_unique == []:
         logging.info('There are no missing files')
         print('There are no missing files.')
@@ -184,8 +179,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
     else:
         logging.info('Listing the removed elements: ')
         print('Listing the removed elements: ')
-        #looping over each list to tell which
-        #elements were missing
+        # Looping over each list to tell which elements were missing.
         for item in Br_unique:
             logging.info(f'{item}')
             print(f'{item}')
@@ -198,42 +192,44 @@ def prepare(config_path, downloaded = None, delete_files = None):
             logging.info(f'{item}')
             print(f'{item}')
     
-    #deleting those lists
+    # Deleting those lists.
     del Br_unique, Bt_unique, Bp_unique
     
-    #checking the number of observations
+    # Checking the number of observations.
     number_of_obs = int(len(fnmatch.filter(os.listdir(path),'*.fits'))/3)
     
-    #taking the information from one of the files
+    # Taking the information from one of the files.
     meta = sunpy.map.Map(path + os.listdir(path)[0]).meta
     
-    #defining a dx and dy in km based on HMI resolution
-    #used 1000 before!
+    # Defining a dx and dy in km based on HMI resolution.
     dx = (2*np.pi*6.955e8*meta['CDELT2']/360)/1000
     dy = dx
     
-    #creating the sql engine:
+    ###########################################################################
+    # Creating the sql engine:
     engine = create_engine(dbaddress, pool_pre_ping=True)
     
-    #declaratives can be accessed through a DBSession instance
-    Base.metadata.bind = engine
-    #binding the engine
+    # Binding the engine to the create the engine later
+    #Base.metadata.bind = engine
+    
+    # Binding the engine
     DBSession = sessionmaker(bind = engine)
-    #creating the session
+    # Creating the session
     session = DBSession()
-
-    #check if stamp exist to keep completing it
+    
+    ###########################################################################
+    
+    # Check if stamp exist to keep completing it.
     s = sql.select([ActiveRegion]).where(
                 ActiveRegion.harp_number == meta['harpnum'])
     
-    #using the result proxy
+    # Using the result proxy to query the results.
     rp = session.execute(s)
     
-    #fetching the results
+    # Fetching all the results.
     AR = rp.fetchall()
     
-    #if the AR isn't there yet, insert it into
-    #the database.
+    #If the AR isn't there yet, insert it into the database.
     if AR == []:
         #the first session should create an item for the active region
         #using its noaa and harp numbers
@@ -251,21 +247,23 @@ def prepare(config_path, downloaded = None, delete_files = None):
             print('AR not inserted into the database.')
             
         else:
-            #checking the ar_id
-            #check if stamp exist to keep completing it
+            '''
+            Aqui eu posso inserir uma key pra região pra perguntar se ela é
+            continuação ou não
+            continue True or false
+            '''
+            # Checking on the ar_id if stamp exist to keep completing it.
             s = sql.select([ActiveRegion]).where(
                         ActiveRegion.harp_number == meta['harpnum'])
             
-            #using the result proxy
+            # Quqerying and fetching the results
             rp = session.execute(s)
-            
-            #fetching the results
             AR = rp.fetchall()
             
-            #assigning the ar number
+            # Assigning the ar number to a variable.
             ar_id = AR[0][0]
             
-            #checking if the result is an int
+            # Checking if the result is an int.
             if type(ar_id) != int:
                 #logging
                 logging.debug('Inconsistent type for AR id.')
@@ -277,24 +275,25 @@ def prepare(config_path, downloaded = None, delete_files = None):
             logging.info('AR ' + str(meta['harpnum']) + \
                          ' commited into the database. New AR id: ' + \
                          str(ar_id))
-            #prints to state progress
+            
+            # Prints to state progress.
             print('AR ' + str(meta['harpnum']) + \
                          ' commited into the database. New AR id: ' + \
                          str(ar_id))
             
         
     else:
-        #printing which is the table positioning
+        # Printing which is the table positioning.
         logging.info(f'The Active Region {AR[0][1],AR[0][2]} is already in the '
               f'database with the id: {AR[0][0]}')
         
         print(f'The Active Region {AR[0][1],AR[0][2]} is already in the '
               f'database with the id: {AR[0][0]}')
         
-        #assigning the ar number
+        # Assigning the ar number. Redundant? Check!!!
         ar_id = AR[0][0]
         
-        #checking if the result is an int
+        # Checking if the result is an int.
         if type(ar_id) != int:
             #logging
             logging.debug('Inconsistent type for AR id.')
@@ -302,18 +301,16 @@ def prepare(config_path, downloaded = None, delete_files = None):
             print('Abort Mission!')
             sys.exit('Exiting')
     
-    #looping over all the datacubes
-    #note that all of them should have
-    #the same dimensions which is already
-    #standard for the cea data
+    # Looping over all the datacubes. Note that all of them should have the 
+    # same dimensions which is already standard for the cea data
     for i in range(len(glob.glob(path+'*.Bp.fits'))-1):
         
         #Calling the cubitos2.py function to make the datacubes.
         data_cube_Br, data_cube_Bp, data_cube_Bt,\
         meta_cube_Bp = cubitos3.create_cube(path, i)
     
-        #Defining the start and end points based on the datacubes.
-        #This should later be included in a for structure depending on the objective.
+        # Defining the start and end points based on the datacubes.
+        # This should later be included in a for structure depending on the objective.
         bx_start = data_cube_Bp[0]
         by_start = np.multiply(-1,data_cube_Bt[0]) #need to multiply this for -1 at some point later on
         bz_start = data_cube_Br[0]
@@ -321,41 +318,39 @@ def prepare(config_path, downloaded = None, delete_files = None):
         by_stop = np.multiply(-1,data_cube_Bt[1]) #need to multiply this for -1 at some point later on
         bz_stop = data_cube_Br[1]
         
-        #defining two variables to take initial and final time
+        # Defining two variables to take initial and final time.
         try:
-            #testing if the registers are on the correct
-            #format
+            # Testing if the registers are on the correct format.
             t1 = datetime.strptime(meta_cube_Bp[0]['t_obs'], "%Y.%m.%d_%H:%M:%S_TAI")
             t2 = datetime.strptime(meta_cube_Bp[1]['t_obs'], "%Y.%m.%d_%H:%M:%S_TAI")
             
         except ValueError:
-            #use t_rec instead
+            # Use t_rec if a value error is encountered.
             t1 = datetime.strptime(meta_cube_Bp[0]['t_rec'], "%Y.%m.%d_%H:%M:%S_TAI")
             t2 = datetime.strptime(meta_cube_Bp[1]['t_rec'], "%Y.%m.%d_%H:%M:%S_TAI")
             logging.debug('Value Error on t_obs, T rec used instead of t obs.')
             
-        #checking if the timestamp already exists
+        # Checking if the timestamp already exists.
         s = sql.select([Observations.id]).where(sql.and_(
                 Observations.timestamp == t2,
                 Observations.ar_id == ar_id))
         rp = session.execute(s)
         results = rp.fetchall()
         
-        #work on a new timestamp if the result
-        #is not yet on the database
+        # Work on a new timestamp if the result is not yet on the database
         if results == []:
         
-            #calculating the time between the images in seconds
+            # Calculating the time between the images in seconds.
             dt = (t2-t1).total_seconds()        
             
-            #Calling do_dave4vm_and 
+            # Calling do_dave4vm_and, which prepares pyDAVE4VM to be executed.
             magvm, vel4vm = do_dave4vm_and.do_dave4vm(dt,bx_stop, bx_start, by_stop,
                                                       by_start, bz_stop, bz_start,dx,
                                                       dy, window_size)
             
-            #checking if dave4vm has a null element
+            # Checking if dave4vm was able to produce results.
             if vel4vm['solved'] is True:
-                #calculating the Poynting flux        
+                # Calculating the Poynting flux        
                 En, Et, Es, int_En, int_Et, int_Es = poyntingflux(dx,
                                                                   magvm['bx'],
                                                                   magvm['by'],
@@ -366,24 +361,24 @@ def prepare(config_path, downloaded = None, delete_files = None):
                 
                 columnshape = np.shape(vel4vm['U0'])[0]
                 
-                #logging
+                # Logging.
                 logging.info('The apperture problem could be solved, data processed.')
-                #prints to state progress
+                # Prints to state progress.
                 print('The apperture problem could be solved, data processed.')
             
             else:
-                #defaulting the Poynting flux and columnshape
+                # Defaulting the Poynting flux and columnshape.
                 En = Et = Es = int_En = int_Et = int_Es = columnshape = None
                 
-                #logging
+                # Logging.
                 logging.info('The apperture problem could not be solved. ' +
                              f'({i}/{number_of_obs})')
-                #prints to state progress
+                # Prints to state progress.
                 print('The apperture problem could not be solved. ' + 
                       f'({i}/{number_of_obs})')
             
-            #here the actual data is led into the database
-            #adding a new observation to the database
+            # Here the actual data is led into the database by adding a new 
+            # observation to it.
             try:
                 new_obs = Observations(timestamp = t2,
                                        ar_id = ar_id,
@@ -415,7 +410,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
                 print('Timestamp ' + str(t2) + ' created. '  + 
                   f'({i}/{number_of_obs})')
                 
-            #feedback
+            # Feedback.
             print(meta_cube_Bp[0]['t_obs'], ' Processed! ' + 
                   f'({i}/{number_of_obs})')
             
@@ -425,38 +420,35 @@ def prepare(config_path, downloaded = None, delete_files = None):
             print('Timestamp ' + str(t2) + 
                   ' was already in the database.')
     
-    #creating a timestamp for the analysis end
+    # Creating a timestamp for the analysis end.
     analysis_end = datetime.now()
     
-    #logging
+    # Logging.
     logging.info('Analysis finished at: ' + str(analysis_end))
     logging.info('Total Execution time: ' + str(analysis_end - analysis_start))
     
-    #printing
+    # Feedback.
     print('Active region ' + str(meta['noaa_ar']) + ' analysis completed.')
     print('Total Execution time: ', str(analysis_end - analysis_start))
     
     if delete_files == True:
-        #delete files
-        #shutil.rmtree() will delete a directory and all its contents.
+        # Deleting files from the system.
         print('Deleting fits files...')
         
-        #using a try/except statement to remove the files
         try:
-            #deleting the folder with the fits files
+            # Deleting the folder with the fits files.
             shutil.rmtree(path)
             
         except OSError:
-            #printing that an error occured
+            # Feedback.
             print('Could not remove files.')
-            #logging the error
+            # Logging.
             logging.debug('Files were not removed.')
-        
-        #logging
+            
         else:
-            #feedback
+            # Feedback.
             print('Files deleted.')
-            #logging info
+            # Logging.
             logging.info('Files deleted.')
     
     return
@@ -469,24 +461,25 @@ def execute_configs(path = None):
     analysis for each region featured on the
     file.
     '''
-    #checking if path to configs exists
+    # Checking if path to configs exists.
     if path is None:
         path = '/Users/andrechicrala/Downloads/configs/'
     
-    #searching for the config files paths
+    # Searching for the config files paths.
     path = glob.glob(path+'*.ini')
-    #defining the path to move the config file to
+    
+    # Defining the path to move the config file to.
     path_to_move = path+'used/'
     
-    #iterating for each file
+    # Iterating for each congif file.
     for config in path:
         print(f'Initiating the analysis for the file located ar: {config}')
         prepare(config_path = config)
-        #Moving the config file to the used section
-        #rsplit will separate what is after and before
-        #the last slash
+        # Moving the config file to the used section.
+        # rsplit will separate what is after and before the last slash.
         shutil.move(config, path_to_move + config.rsplit('/',1)[-1])
-        
+    
+    # Feedback.    
     print('Finished =D')
     
     return
