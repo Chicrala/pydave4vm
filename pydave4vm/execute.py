@@ -51,29 +51,34 @@ use con and get like here:
 @author: andrechicrala
 """
 
-#importing basic packages
+# Importing packages to perform operations in the code.
 import numpy as np
 from datetime import datetime
-#calling my set of packages
-from pydave4vm import cubitos3, check_fits, do_dave4vm_and
-from and_mods.poyntingflux import poyntingflux
+import logging
+import fnmatch
+import sunpy
+import sunpy.map
+import json
+
+# Importing system related packages.
+import glob
+import shutil
+import sys
+import os
+
+# Calling the package that prepares PyDAVE4VM.
+from pydave4vm import do_dave4vm_and
+
+# Importing the addons for PyDAVE4VM.
+from pydave4vm.addons import myconfig, neutralline, cubitos3, check_fits
+from pydave4vm.addons.poyntingflux import poyntingflux
 from pydave4vm import downloaddata
-from and_mods import myconfig
-#importing the packages to create the session
+
+# Importing the packages to operate with the database.
 import sqlalchemy as sql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-#importing system related packages
-import glob
-import shutil
-import logging
-import os
-import fnmatch
-#importing the classes
-from and_db.dbtest import Base, ActiveRegion, Observations
-import sys
-import sunpy
-import sunpy.map
+from pydave4vm.addons.maindb import ActiveRegion, Observations
 
 def ajuste(data):
     '''
@@ -115,7 +120,9 @@ def prepare(config_path, downloaded = None, delete_files = None):
     
     # Checking if data is already in the disk.
     if downloaded == None:
-        
+        #######################################################################
+        # Downloading the data.
+        #######################    
         # Check in the standard path if file exists.
         std_path = '/Users/andrechicrala/Downloads/'+ str(harpnum)+'/'
         # If it don't, download it.
@@ -123,17 +130,16 @@ def prepare(config_path, downloaded = None, delete_files = None):
         
             # Downloading data and returning the path.
             try:
-                path = downloaddata.downdrms(harpnum = harpnum,
-                                             tstart = tstart,
-                                             extent = extent,
-                                             cadence = cadence)
+                path = downloaddata.downdrms(harpnum=harpnum,
+                                             tstart=tstart,
+                                             extent=extent,
+                                             cadence=cadence)
                 
             # Add to the log if try is sucessfull or not.
             except RuntimeError:
                 logging.debug('The download was not complete.')
                 print('The download was not complete.')
                 
-            
             else:
                 logging.info('Downloads finished at: ' + str(datetime.now()))
                 
@@ -198,29 +204,32 @@ def prepare(config_path, downloaded = None, delete_files = None):
     # Checking the number of observations.
     number_of_obs = int(len(fnmatch.filter(os.listdir(path),'*.fits'))/3)
     
-    # Taking the information from one of the files.
+    # Taking the header information from one of the files.
     meta = sunpy.map.Map(path + os.listdir(path)[0]).meta
     
     # Defining a dx and dy in km based on HMI resolution.
     dx = (2*np.pi*6.955e8*meta['CDELT2']/360)/1000
     dy = dx
     
+    # Checking the length of the image in the y-axis.
+    columnshape = np.shape(sunpy.map.Map(path + os.listdir(path)[0]).data)[0]
+    rowshape = np.shape(sunpy.map.Map(path + os.listdir(path)[0]).data)[1]
+    
     ###########################################################################
-    # Creating the sql engine:
+    # Starting the database session.
+    ################################
+    # Creating the sql engine.
     engine = create_engine(dbaddress, pool_pre_ping=True)
     
-    # Binding the engine to the create the engine later
-    #Base.metadata.bind = engine
-    
-    # Binding the engine
+    # Binding the engine.
     DBSession = sessionmaker(bind = engine)
-    # Creating the session
+    # Creating the session.
     session = DBSession()
-    
     ###########################################################################
-    
+    # Populating the ActiveRegion table.
+    ####################################
     # Check if stamp exist to keep completing it.
-    s = sql.select([ActiveRegion]).where(
+    s = sql.select([ActiveRegion.AR_id]).where(
                 ActiveRegion.harp_number == meta['harpnum'])
     
     # Using the result proxy to query the results.
@@ -231,16 +240,17 @@ def prepare(config_path, downloaded = None, delete_files = None):
     
     #If the AR isn't there yet, insert it into the database.
     if AR == []:
-        #the first session should create an item for the active region
-        #using its noaa and harp numbers
-        #starting session
+        
+        # The first session should create an item for the ActiveRegion table.
+        # Using its noaa and harp numbers. Starting session.
         try:
-            new_ar = ActiveRegion(noaa_number = meta['noaa_ar'],
-                                  harp_number = meta['harpnum'])
+            new_ar = ActiveRegion(harp_number=harpnum,
+                                  columnshape=columnshape,
+                                  rowshape=rowshape)
             session.add(new_ar)
             session.commit()
             
-        #adding the atribute exception    
+        # Adding the atribute exception.
         except AttributeError:
             session.rollback()
             logging.debug('AR not inserted into the database.')
@@ -254,7 +264,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             '''
             # Checking on the ar_id if stamp exist to keep completing it.
             s = sql.select([ActiveRegion]).where(
-                        ActiveRegion.harp_number == meta['harpnum'])
+                        ActiveRegion.harp_number == harpnum)
             
             # Quqerying and fetching the results
             rp = session.execute(s)
@@ -265,12 +275,11 @@ def prepare(config_path, downloaded = None, delete_files = None):
             
             # Checking if the result is an int.
             if type(ar_id) != int:
-                #logging
+                # Logging.
                 logging.debug('Inconsistent type for AR id.')
                 print('Inconsistent type for AR id.')
                 print('Abort Mission!')
                 sys.exit('Exiting')
-            
             
             logging.info('AR ' + str(meta['harpnum']) + \
                          ' commited into the database. New AR id: ' + \
@@ -280,8 +289,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             print('AR ' + str(meta['harpnum']) + \
                          ' commited into the database. New AR id: ' + \
                          str(ar_id))
-            
-        
+                
     else:
         # Printing which is the table positioning.
         logging.info(f'The Active Region {AR[0][1],AR[0][2]} is already in the '
@@ -295,48 +303,60 @@ def prepare(config_path, downloaded = None, delete_files = None):
         
         # Checking if the result is an int.
         if type(ar_id) != int:
-            #logging
+            # Logging.
             logging.debug('Inconsistent type for AR id.')
             print('Inconsistent type for AR id.')
             print('Abort Mission!')
             sys.exit('Exiting')
-    
+    ###########################################################################
     # Looping over all the datacubes. Note that all of them should have the 
-    # same dimensions which is already standard for the cea data
+    # same dimensions which is already standard for the cea data.
     for i in range(len(glob.glob(path+'*.Bp.fits'))-1):
-        
-        #Calling the cubitos2.py function to make the datacubes.
+        #######################################################################
+        # Data preparation.
+        ###################
+        #Calling the function to make the datacubes.
         data_cube_Br, data_cube_Bp, data_cube_Bt,\
         meta_cube_Bp = cubitos3.create_cube(path, i)
     
         # Defining the start and end points based on the datacubes.
         # This should later be included in a for structure depending on the objective.
         bx_start = data_cube_Bp[0]
-        by_start = np.multiply(-1,data_cube_Bt[0]) #need to multiply this for -1 at some point later on
+        by_start = np.multiply(-1,data_cube_Bt[0])
         bz_start = data_cube_Br[0]
         bx_stop = data_cube_Bp[1]
-        by_stop = np.multiply(-1,data_cube_Bt[1]) #need to multiply this for -1 at some point later on
+        by_stop = np.multiply(-1,data_cube_Bt[1])
         bz_stop = data_cube_Br[1]
         
         # Defining two variables to take initial and final time.
         try:
             # Testing if the registers are on the correct format.
-            t1 = datetime.strptime(meta_cube_Bp[0]['t_obs'], "%Y.%m.%d_%H:%M:%S_TAI")
-            t2 = datetime.strptime(meta_cube_Bp[1]['t_obs'], "%Y.%m.%d_%H:%M:%S_TAI")
+            t1 = datetime.strptime(meta_cube_Bp[0]['date-obs'], "%Y-%m-%dT%H:%M:%S")
+            t2 = datetime.strptime(meta_cube_Bp[1]['date-obs'], "%Y-%m-%dT%H:%M:%S")
             
         except ValueError:
             # Use t_rec if a value error is encountered.
             t1 = datetime.strptime(meta_cube_Bp[0]['t_rec'], "%Y.%m.%d_%H:%M:%S_TAI")
             t2 = datetime.strptime(meta_cube_Bp[1]['t_rec'], "%Y.%m.%d_%H:%M:%S_TAI")
-            logging.debug('Value Error on t_obs, T rec used instead of t obs.')
+            print('Value Error on date-obs, t_rec used instead of date-obs.')
+            logging.debug('Value Error on date-obs, t_rec used instead of date-obs.')
+            
+        # Checking if the shape is consistent among the observations.
+        if np.shape(bx_start) != np.shape(bx_stop):
+            print(f'Shape not consistent. bx_start({t1}): {np.shape(bx_start)}, bx_stop({t2}): {np.shape(bx_stop)}')
+            logging.debug(f'Shape not consistent. bx_start({t1}): {np.shape(bx_start)}, bx_stop({t2}): {np.shape(bx_stop)}')
+            # Go to the next step.
+            continue
             
         # Checking if the timestamp already exists.
-        s = sql.select([Observations.id]).where(sql.and_(
+        s = sql.select([Observations.OBS_id]).where(sql.and_(
                 Observations.timestamp == t2,
                 Observations.ar_id == ar_id))
         rp = session.execute(s)
         results = rp.fetchall()
-        
+        #######################################################################
+        # Obtaining the velocities with PyDAVE4VM.
+        ##########################################
         # Work on a new timestamp if the result is not yet on the database
         if results == []:
         
@@ -351,7 +371,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             # Checking if dave4vm was able to produce results.
             if vel4vm['solved'] is True:
                 # Calculating the Poynting flux        
-                En, Et, Es, int_En, int_Et, int_Es = poyntingflux(dx,
+                Sn, St, Ss, int_Sn, int_St, int_Ss = poyntingflux(dx,
                                                                   magvm['bx'],
                                                                   magvm['by'],
                                                                   magvm['bz'],
@@ -367,35 +387,87 @@ def prepare(config_path, downloaded = None, delete_files = None):
                 print('The apperture problem could be solved, data processed.')
             
             else:
+                ###############################################################
+                # Poynting flux calculation.
+                ############################
                 # Defaulting the Poynting flux and columnshape.
-                En = Et = Es = int_En = int_Et = int_Es = columnshape = None
+                Sn = St = Ss = int_Sn = int_St = int_Ss = columnshape = None
                 
                 # Logging.
                 logging.info('The apperture problem could not be solved. ' +
                              f'({i}/{number_of_obs})')
                 # Prints to state progress.
                 print('The apperture problem could not be solved. ' + 
-                      f'({i}/{number_of_obs})')
+                      f'({i}/{number_of_obs})')    
+            ###################################################################
+            # Integration around the PILS.
+            ##############################
+            # Creating the PIL gaussian broadening mask.
+            pil_gb_map = neutralline.POKEMON(magvm['bz'], gaussian=True)
             
+            # Testing if the PIL actually exists.
+            if np.sum(pil_gb_map) > 0.1:
+                # Integrating the Poynting flux components along the PIL.
+                int_PIL_Sn = np.multiply(Sn,pil_gb_map)
+                int_PIL_pos_Sn = np.multiply(np.multiply(Sn,(Sn > 0).astype(float)),
+                                             pil_gb_map)
+                int_PIL_neg_Sn = np.multiply(np.multiply(Sn,(Sn < 0).astype(float)),
+                                             pil_gb_map)
+                
+                int_PIL_St = np.multiply(St,pil_gb_map)
+                int_PIL_pos_St = np.multiply(np.multiply(St,(St > 0).astype(float)),
+                                             pil_gb_map)
+                int_PIL_neg_St = np.multiply(np.multiply(St,(St < 0).astype(float)),
+                                             pil_gb_map)
+                
+                int_PIL_Ss = np.multiply(Ss,pil_gb_map)
+                int_PIL_pos_Ss = np.multiply(np.multiply(Ss,(Ss > 0).astype(float)),
+                                             pil_gb_map)
+                int_PIL_neg_Ss = np.multiply(np.multiply(Ss,(Ss < 0).astype(float)),
+                                             pil_gb_map)
+                
+                # Calculating Schrijver's R.
+                logR = np.log10(np.sum(np.absolute(np.multiply(magvm['bz'],
+                                                               pil_gb_map))))
+            ###################################################################
+            # Finding the NOAA numbers of these observations.
+            #################################################
+            
+            ###################################################################
+            # Data insertion.
+            #################
             # Here the actual data is led into the database by adding a new 
             # observation to it.
             try:
-                new_obs = Observations(timestamp = t2,
-                                       ar_id = ar_id,
-                                       processed = vel4vm['solved'],
-                                       columnshape = columnshape,
-                                       d4vm_vx = ajuste(vel4vm['U0']),
-                                       d4vm_vy = ajuste(vel4vm['V0']),
-                                       d4vm_vz = ajuste(vel4vm['W0']), 
-                                       mean_bx = ajuste(magvm['bx']),
-                                       mean_by = ajuste(magvm['by']), 
-                                       mean_bz = ajuste(magvm['bz']),
-                                       poyn_En = ajuste(En), 
-                                       poyn_Et = ajuste(Et), 
-                                       poyn_Es = ajuste(Es),
-                                       poyn_intEn = int_En,
-                                       poyn_intEt = int_Et,
-                                       poyn_intEs = int_Es)
+                new_obs = Observations(timestamp_dt=t2,
+                                       timestamp_int=int(t2.strftime('%Y%m%d%H%M%S')),
+                                       deltat=dt,
+                                       ar_id=ar_id,
+                                       processed=vel4vm['solved'],
+                                       d4vm_vx=ajuste(vel4vm['U0']),
+                                       d4vm_vy=ajuste(vel4vm['V0']),
+                                       d4vm_vz=ajuste(vel4vm['W0']), 
+                                       mean_bx=ajuste(magvm['bx']),
+                                       mean_by=ajuste(magvm['by']), 
+                                       mean_bz=ajuste(magvm['bz']),
+                                       poyn_En=ajuste(Sn), 
+                                       poyn_Et=ajuste(St), 
+                                       poyn_Es=ajuste(Ss),
+                                       poyn_intSn=int_Sn,
+                                       poyn_intSt=int_St,
+                                       poyn_intSs=int_Ss,
+                                       int_PIL_Sn=int_PIL_Sn,
+                                       int_PIL_pos_Sn=int_PIL_pos_Sn,
+                                       int_PIL_neg_Sn=int_PIL_neg_Sn,
+                                       int_PIL_St=int_PIL_St,
+                                       int_PIL_pos_St=int_PIL_pos_St,
+                                       int_PIL_neg_St=int_PIL_neg_St,
+                                       int_PIL_Ss=int_PIL_Ss,
+                                       int_PIL_pos_Ss=int_PIL_pos_Ss,
+                                       int_PIL_neg_Ss=int_PIL_neg_Ss,
+                                       logR=logR,
+                                       hmi_meta_data=json.dumps(meta_cube_Bp[1]))
+                
                 session.add(new_obs)
                 session.commit()
                 
@@ -418,16 +490,31 @@ def prepare(config_path, downloaded = None, delete_files = None):
             logging.info('Timestamp ' + str(t2) + 
                          ' was already in the database.')
             print('Timestamp ' + str(t2) + 
-                  ' was already in the database.')
-    
+                  ' was already in the database.')       
+    ###########################################################################
     # Creating a timestamp for the analysis end.
     analysis_end = datetime.now()
     
     # Logging.
-    logging.info('Analysis finished at: ' + str(analysis_end))
+    logging.info('Observation table analysis finished at: ' + str(analysis_end))
     logging.info('Total Execution time: ' + str(analysis_end - analysis_start))
+    ###########################################################################
+    # Updating the NOAA number entries for the set processed.
+    #########################################################
     
-    # Feedback.
+    ###########################################################################
+    # Populating the Morphology and Events tables.
+    ##############################################
+    
+    ###########################################################################
+    # Ending the execution.
+    #######################
+    # Closing database session.
+    session.close()
+    print('Session closed')
+    logging.info('Session closed')
+    
+    # Final feedback.
     print('Active region ' + str(meta['noaa_ar']) + ' analysis completed.')
     print('Total Execution time: ', str(analysis_end - analysis_start))
     
@@ -450,6 +537,9 @@ def prepare(config_path, downloaded = None, delete_files = None):
             print('Files deleted.')
             # Logging.
             logging.info('Files deleted.')
+            
+    # Shutting down the log.
+    logging.shutdown()
     
     return
     
