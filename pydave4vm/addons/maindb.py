@@ -208,7 +208,7 @@ class Observations(Base):
     int_PIL_pos_Ss=sql.Column(sql.Float, nullable=True)
     int_PIL_neg_Ss=sql.Column(sql.Float, nullable=True)
     
-    #
+    # Schrijver's R.
     logR=sql.Column(sql.Float, nullable=True)
     
     # Creating a column to store the sharp metadata as a json object.

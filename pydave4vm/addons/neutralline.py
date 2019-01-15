@@ -10,7 +10,7 @@ import numpy as np
 from scipy import signal
 from scipy.ndimage import gaussian_filter
 
-def POKEMON(bz, gaussian=False, fwhm_pix=40, threshold=150):
+def PIL(bz, gaussian=False, fwhm_pix=40, threshold=150):
     '''
     This function will map the neutral line for a given
     observation in the database.

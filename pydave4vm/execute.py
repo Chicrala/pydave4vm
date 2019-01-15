@@ -70,7 +70,7 @@ import os
 from pydave4vm import do_dave4vm_and
 
 # Importing the addons for PyDAVE4VM.
-from pydave4vm.addons import myconfig, neutralline, cubitos3, check_fits
+from pydave4vm.addons import myconfig, neutralline, cubitos3, check_fits, swpc_db
 from pydave4vm.addons.poyntingflux import poyntingflux
 from pydave4vm import downloaddata
 
@@ -308,6 +308,10 @@ def prepare(config_path, downloaded = None, delete_files = None):
             print('Inconsistent type for AR id.')
             print('Abort Mission!')
             sys.exit('Exiting')
+            
+    # Creating an empty to store all the NOAA numbers.
+    noaa_numbers = []
+    
     ###########################################################################
     # Looping over all the datacubes. Note that all of them should have the 
     # same dimensions which is already standard for the cea data.
@@ -331,8 +335,8 @@ def prepare(config_path, downloaded = None, delete_files = None):
         # Defining two variables to take initial and final time.
         try:
             # Testing if the registers are on the correct format.
-            t1 = datetime.strptime(meta_cube_Bp[0]['date-obs'], "%Y-%m-%dT%H:%M:%S")
-            t2 = datetime.strptime(meta_cube_Bp[1]['date-obs'], "%Y-%m-%dT%H:%M:%S")
+            t1 = datetime.strptime(meta_cube_Bp[0]['date-obs'], "%Y-%m-%dT%H:%M:%S.%f")
+            t2 = datetime.strptime(meta_cube_Bp[1]['date-obs'], "%Y-%m-%dT%H:%M:%S.%f")
             
         except ValueError:
             # Use t_rec if a value error is encountered.
@@ -403,7 +407,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             # Integration around the PILS.
             ##############################
             # Creating the PIL gaussian broadening mask.
-            pil_gb_map = neutralline.POKEMON(magvm['bz'], gaussian=True)
+            pil_gb_map = neutralline.PIL(magvm['bz'], gaussian=True)
             
             # Testing if the PIL actually exists.
             if np.sum(pil_gb_map) > 0.1:
@@ -432,6 +436,17 @@ def prepare(config_path, downloaded = None, delete_files = None):
             ###################################################################
             # Finding the NOAA numbers of these observations.
             #################################################
+            # Calling the function that does it and placing the NOAA numbers
+            # in numerical order.
+            noaa_number = sorted(swpc_db(meta_cube_Bp[1]))
+            
+            # Appending the NOAA numbers to the overall list.
+            for thing in noaa_number:
+                noaa_numbers.append(thing)
+            
+            # Filling all the available slots.
+            while len(noaa_number) < 3:
+                noaa_number.append(None)
             
             ###################################################################
             # Data insertion.
@@ -466,7 +481,10 @@ def prepare(config_path, downloaded = None, delete_files = None):
                                        int_PIL_pos_Ss=int_PIL_pos_Ss,
                                        int_PIL_neg_Ss=int_PIL_neg_Ss,
                                        logR=logR,
-                                       hmi_meta_data=json.dumps(meta_cube_Bp[1]))
+                                       hmi_meta_data=json.dumps(meta_cube_Bp[1]),
+                                       noaa_number1=noaa_number[0],
+                                       noaa_number2=noaa_number[1],
+                                       noaa_number3=noaa_number[2])
                 
                 session.add(new_obs)
                 session.commit()
@@ -499,13 +517,99 @@ def prepare(config_path, downloaded = None, delete_files = None):
     logging.info('Observation table analysis finished at: ' + str(analysis_end))
     logging.info('Total Execution time: ' + str(analysis_end - analysis_start))
     ###########################################################################
-    # Updating the NOAA number entries for the set processed.
-    #########################################################
-    
-    ###########################################################################
     # Populating the Morphology and Events tables.
     ##############################################
+    # Separating the unique NOAA numbers.
+    noaa_numbers = list(sorted(set(noaa_numbers)))
     
+    # Getting all the morphology entries for this AR.
+    morphologies = swpc_db.find_morphology(noaa_numbers)
+    
+    # Flatenning the results into a list and taking all the results 
+    # into the database.
+    for values in [item for sublist in list(morphologies.values()) for item in sublist]:
+        # Creating a new entry for the Morphology table.
+        new_morph = Morphology(ar_id=ar_id,
+                               noaa_number=values[2],
+                               mcintosh=values[3],
+                               hale=values[4],
+                               daystamp_dt=values[5],
+                               daystamp_int=values[6],
+                               latitude=values[7],
+                               longitude=values[8],
+                               LL=values[9],
+                               Lo=values[10],
+                               NN=values[11],
+                               area=values[12])
+        
+        try:
+            session.add(new_morph)
+            session.commit()
+            
+        except ValueError:
+            print(f'Morphology {values[6]} NOT inserted.')
+            logging.debug(f'Morphology {values[6]} NOT inserted.')
+        
+        else:
+            print(f'Morphology {values[6]} inserted.')
+            logging.debug(f'Morphology {values[6]} inserted.')
+        
+    # Doing the same for the Events.
+    events = swpc_db.find_morphology(noaa_numbers)
+    
+    # Flatenning the results into a list and taking all the results 
+    # into the database.
+    for values in [item for sublist in list(events.values()) for item in sublist]:
+        # Creating a new entry for the Morphology table.
+        new_eve = Events(ar_id=ar_id,
+                           flareclass=values[2],
+                           event_begin_dt=values[3],
+                           event_max_dt=values[4],
+                           event_end_dt=values[5],
+                           event_begin_int=values[6],
+                           event_max_int=values[7],
+                           event_end_int=values[8],
+                           noaa_number=values[9],
+                           event_number=values[10],
+                           daystamp_dt=values[11],
+                           daystamp_int=values[12])
+        
+        try:
+            session.add(new_eve)
+            session.commit()
+            
+        except ValueError:
+            print(f'Events {values[6]} NOT inserted.')
+            logging.debug(f'Events {values[6]} NOT inserted.')
+        
+        else:
+            print(f'Events {values[6]} inserted.')
+            logging.debug(f'Events {values[6]} inserted.')
+    
+    ###########################################################################
+    # Updating the NOAA number entries for the set processed.
+    #########################################################
+    # Filling the available slots.
+    while len(noaa_numbers) > 3:
+        noaa_numbers.append(None)
+    
+    # Updating the noaa numbers into the ActiveRegion table.
+    u = sql.update(ActiveRegion).where(ActiveRegion.harp_number==harp_number)
+    u = u.values(ActiveRegion.noaa_number1=noaa_numbers[0],
+                 ActiveRegion.noaa_number1=noaa_numbers[1],
+                 ActiveRegion.noaa_number1=noaa_numbers[2])
+    
+    try:
+        session.execute(u)
+        session.commit()
+    
+    except ValueError:
+        print('Active Region noaa numbers NOT updated.')
+        logging.debug('Active Region noaa numbers NOT updated.')
+    
+    else:
+        print('Active Region noaa numbers updated.')
+        logging.debug('Active Region noaa numbers updated.')
     ###########################################################################
     # Ending the execution.
     #######################
