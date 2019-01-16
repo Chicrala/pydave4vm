@@ -142,13 +142,26 @@ def prepare(config_path, downloaded = None, delete_files = None):
             else:
                 logging.info('Downloads finished at: ' + str(datetime.now()))
             
-            #Reporting missing files
+            # Reporting missing files.
             if missing_files != []:
-                pass
+                print(f'Missing files: {missing_files}')
+                loggin.debug(f'Missing files: {missing_files}')
                 
         # If it does use the files there.
         else:
             path = std_path
+            
+            # Checking for missing files within the path.
+            missing_files = downloaddata.check_missing_files(harpnum=harpnum, 
+                                                             directory=std_path,
+                                                             tstart=tstart,
+                                                             extent=extent,
+                                                             cadence=cadence)
+            
+            # Reporting missing files.
+            if missing_files != []:
+                print(f'Missing files: {missing_files}')
+                loggin.debug(f'Missing files: {missing_files}')
     
     # Assigning the path to the files.       
     else:
