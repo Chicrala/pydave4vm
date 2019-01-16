@@ -13,6 +13,7 @@ from sunpy.net import jsoc
 import drms
 import time
 import os
+import glob
 
 
 def downfido(harpnum, tstart, tend):
@@ -169,10 +170,24 @@ def downdrms(harpnum, tstart, extent, cadence, path = None):
     #getting the request
     requests.download(out_dir)
     
+    # Creating a list of the downloaded files.
+    files = [x.replace(out_dir,'') for x in glob.glob(out_dir+'*.fits')]
+    
+    # Comparing the search result and how many files were downloaded.
+    missing_files = []
+    
+    if len(requests.data) != len(files):
+        print('The number of files downloaded do not match with the search results.')
+        
+        # Checking which files are missing.
+        for file in requests.data['filename']:
+            if file not in files:
+                missing_files.append(file)
+    
     #printing
     print('Downloads complete!')
     
-    return(out_dir)
+    return(out_dir, missing_files)
 
 def checksegments():
     '''

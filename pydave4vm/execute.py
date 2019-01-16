@@ -70,9 +70,8 @@ import os
 from pydave4vm import do_dave4vm_and
 
 # Importing the addons for PyDAVE4VM.
-from pydave4vm.addons import myconfig, neutralline, cubitos3, check_fits, swpc_db
+from pydave4vm.addons import myconfig, neutralline, cubitos3, check_fits, swpc_db, downloaddata
 from pydave4vm.addons.poyntingflux import poyntingflux
-from pydave4vm import downloaddata
 
 # Importing the packages to operate with the database.
 import sqlalchemy as sql
@@ -130,10 +129,10 @@ def prepare(config_path, downloaded = None, delete_files = None):
         
             # Downloading data and returning the path.
             try:
-                path = downloaddata.downdrms(harpnum=harpnum,
-                                             tstart=tstart,
-                                             extent=extent,
-                                             cadence=cadence)
+                path, missing_files = downloaddata.downdrms(harpnum=harpnum,
+                                                            tstart=tstart,
+                                                            extent=extent,
+                                                            cadence=cadence)
                 
             # Add to the log if try is sucessfull or not.
             except RuntimeError:
@@ -142,6 +141,10 @@ def prepare(config_path, downloaded = None, delete_files = None):
                 
             else:
                 logging.info('Downloads finished at: ' + str(datetime.now()))
+            
+            #Reporting missing files
+            if missing_files != []:
+                pass
                 
         # If it does use the files there.
         else:
