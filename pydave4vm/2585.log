@@ -1,0 +1,13 @@
+INFO:root:Analysis started at: 2019-01-18 17:15:36.553472
+INFO:root:The files were already saved in the disk.
+INFO:root:There are 6 .fits files saved in the disk.
+INFO:root:There are no missing files
+INFO:root:Analysis started at: 2019-01-18 17:15:54.619494
+INFO:root:The files were already saved in the disk.
+INFO:root:There are 6 .fits files saved in the disk.
+INFO:root:There are no missing files
+INFO:root:AR 6063 commited into the database. New AR id: 1
+INFO:root:The apperture problem could be solved, data processed.
+INFO:root:Timestamp 2015-11-04 12:10:12.400000 created. (0/2)
+INFO:root:Observation table analysis finished at: 2019-01-18 17:16:23.408887
+INFO:root:Total Execution time: 0:00:28.789393

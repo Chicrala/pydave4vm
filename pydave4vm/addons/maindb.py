@@ -38,10 +38,34 @@ import sqlalchemy as sql
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import create_engine
-from sqlalchemy.dialects.sqlite import JSON
+import sqlalchemy.types as types
+import json
 
 # Creating the Base Object for the tables.
-Base=declarative_base()
+Base = declarative_base()
+
+# Creating a class to serialize a JSON object.
+class StringyJSON(types.TypeDecorator):
+    """
+    Stores and retrieves JSON as TEXT.
+    Cheers @vacariu https://avacariu.me/
+    """
+
+    impl = types.TEXT
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
+
+# TypeEngine.with_variant says "use StringyJSON instead when
+# connecting to 'sqlite'".
+MagicJSON = types.JSON().with_variant(StringyJSON, 'sqlite')
 
 # Defining a class to hold the active region table.
 class ActiveRegion(Base):
@@ -99,9 +123,9 @@ class ActiveRegion(Base):
     rowshape=sql.Column('rowshape', sql.Integer, nullable=False)
     
     # Defining the relationships between the tables.
-    obs=relationship('observations')
-    morp=relationship('morphology')
-    eve=relationship('events')
+    obs=relationship('Observations')
+    morp=relationship('Morphology')
+    eve=relationship('Events')
 
 class Observations(Base):
     '''
@@ -212,7 +236,10 @@ class Observations(Base):
     logR=sql.Column(sql.Float, nullable=True)
     
     # Creating a column to store the sharp metadata as a json object.
-    hmi_meta_data=sql.Column('hmimetadata', JSON, nullable=False)
+    hmi_meta_data=sql.Column('hmimetadata', StringyJSON, nullable=False)
+    
+    # Stabilishing the relationship between this table and the ARs table.
+    ars=relationship('ActiveRegion', backref=backref('observations', order_by=ar_id))
    
 class Morphology(Base):
     '''
@@ -276,7 +303,7 @@ class Morphology(Base):
     MORP_id=sql.Column(sql.Integer, primary_key=True)
     
     # Defining the Foreign Key column.
-    ar_id=sql.Column(sql.Integer, sql.ForeignKey('ars.ar_id'))
+    ar_id=sql.Column(sql.Integer, sql.ForeignKey(ActiveRegion.AR_id))
     
     # The columns with SWPC - SRS mined data.
     noaa_number=sql.Column(sql.Integer, nullable=True)
@@ -292,7 +319,7 @@ class Morphology(Base):
     area=sql.Column(sql.Integer, nullable=True)
     
     # Stabilishing the relationship between this table and the ARs table.
-    ars=relationship('activeregion', backref=backref('morphology', order_by=ar_id))  
+    ars=relationship('ActiveRegion', backref=backref('morphology', order_by=ar_id))  
 
 
 class Events(Base):
@@ -364,7 +391,7 @@ class Events(Base):
     EVE_id=sql.Column(sql.Integer, primary_key=True)
     
     # Defining the Foreign Key column.
-    ar_id=sql.Column(sql.Integer, sql.ForeignKey('ars.ar_id'))
+    ar_id=sql.Column(sql.Integer, sql.ForeignKey(ActiveRegion.AR_id))
     
     # Defining the columns to store the events data.
     flareclass=sql.Column(sql.String, nullable=True)
@@ -384,17 +411,11 @@ class Events(Base):
     daystamp_int=sql.Column(sql.Integer, nullable=True)
     
     # Stabilishing the relationship between the Eventos and the ARs tables.
-    ars=relationship('activeregion', backref=backref('events', order_by=ar_id))
-
-class Properties(Base):
-    '''
-    This table will contain objects
-    '''
-    pass
+    ars=relationship('ActiveRegion', backref=backref('events', order_by=ar_id))
 
 if __name__ == '__main__':
     # Create an engine that stores data in the local directory.
-    engine=create_engine('sqlite:///testdatabase.db')    
+    engine=create_engine('sqlite:///main.db')    
 
     # Create all tables in the engine.
     # This is equivalent to "Create Table" statements in raw SQL.

@@ -77,7 +77,7 @@ from pydave4vm.addons.poyntingflux import poyntingflux
 import sqlalchemy as sql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from pydave4vm.addons.maindb import ActiveRegion, Observations
+from pydave4vm.addons.maindb import ActiveRegion, Observations, Events, Morphology
 
 def ajuste(data):
     '''
@@ -123,7 +123,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
         # Downloading the data.
         #######################    
         # Check in the standard path if file exists.
-        std_path = '/Users/andrechicrala/Downloads/'+ str(harpnum)+'/'
+        std_path = '/Users/andrechicrala/Downloads/test'+ str(harpnum)+'/'
         # If it don't, download it.
         if os.path.exists(std_path) != True:
         
@@ -145,7 +145,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             # Reporting missing files.
             if missing_files != []:
                 print(f'Missing files: {missing_files}')
-                loggin.debug(f'Missing files: {missing_files}')
+                logging.debug(f'Missing files: {missing_files}')
                 
         # If it does use the files there.
         else:
@@ -161,7 +161,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             # Reporting missing files.
             if missing_files != []:
                 print(f'Missing files: {missing_files}')
-                loggin.debug(f'Missing files: {missing_files}')
+                logging.debug(f'Missing files: {missing_files}')
     
     # Assigning the path to the files.       
     else:
@@ -370,7 +370,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             
         # Checking if the timestamp already exists.
         s = sql.select([Observations.OBS_id]).where(sql.and_(
-                Observations.timestamp == t2,
+                Observations.timestamp_dt == t2,
                 Observations.ar_id == ar_id))
         rp = session.execute(s)
         results = rp.fetchall()
@@ -428,23 +428,23 @@ def prepare(config_path, downloaded = None, delete_files = None):
             # Testing if the PIL actually exists.
             if np.sum(pil_gb_map) > 0.1:
                 # Integrating the Poynting flux components along the PIL.
-                int_PIL_Sn = np.multiply(Sn,pil_gb_map)
-                int_PIL_pos_Sn = np.multiply(np.multiply(Sn,(Sn > 0).astype(float)),
-                                             pil_gb_map)
-                int_PIL_neg_Sn = np.multiply(np.multiply(Sn,(Sn < 0).astype(float)),
-                                             pil_gb_map)
+                int_PIL_Sn = np.sum(np.multiply(Sn,pil_gb_map))
+                int_PIL_pos_Sn = np.sum(np.multiply(np.multiply(Sn,(Sn > 0).astype(float)),
+                                                    pil_gb_map))
+                int_PIL_neg_Sn = np.sum(np.multiply(np.multiply(Sn,(Sn < 0).astype(float)),
+                                                    pil_gb_map))
                 
-                int_PIL_St = np.multiply(St,pil_gb_map)
-                int_PIL_pos_St = np.multiply(np.multiply(St,(St > 0).astype(float)),
-                                             pil_gb_map)
-                int_PIL_neg_St = np.multiply(np.multiply(St,(St < 0).astype(float)),
-                                             pil_gb_map)
+                int_PIL_St = np.sum(np.multiply(St,pil_gb_map))
+                int_PIL_pos_St = np.sum(np.multiply(np.multiply(St,(St > 0).astype(float)),
+                                                    pil_gb_map))
+                int_PIL_neg_St = np.sum(np.multiply(np.multiply(St,(St < 0).astype(float)),
+                                                    pil_gb_map))
                 
-                int_PIL_Ss = np.multiply(Ss,pil_gb_map)
-                int_PIL_pos_Ss = np.multiply(np.multiply(Ss,(Ss > 0).astype(float)),
-                                             pil_gb_map)
-                int_PIL_neg_Ss = np.multiply(np.multiply(Ss,(Ss < 0).astype(float)),
-                                             pil_gb_map)
+                int_PIL_Ss = np.sum(np.multiply(Ss,pil_gb_map))
+                int_PIL_pos_Ss = np.sum(np.multiply(np.multiply(Ss,(Ss > 0).astype(float)),
+                                                    pil_gb_map))
+                int_PIL_neg_Ss = np.sum(np.multiply(np.multiply(Ss,(Ss < 0).astype(float)),
+                                                    pil_gb_map))
                 
                 # Calculating Schrijver's R.
                 logR = np.log10(np.sum(np.absolute(np.multiply(magvm['bz'],
@@ -454,7 +454,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             #################################################
             # Calling the function that does it and placing the NOAA numbers
             # in numerical order.
-            noaa_number = sorted(swpc_db(meta_cube_Bp[1]))
+            noaa_number = sorted(swpc_db.find_noaa_number(meta_cube_Bp[1]))
             
             # Appending the NOAA numbers to the overall list.
             for thing in noaa_number:
@@ -474,19 +474,18 @@ def prepare(config_path, downloaded = None, delete_files = None):
                                        timestamp_int=int(t2.strftime('%Y%m%d%H%M%S')),
                                        deltat=dt,
                                        ar_id=ar_id,
-                                       processed=vel4vm['solved'],
                                        d4vm_vx=ajuste(vel4vm['U0']),
                                        d4vm_vy=ajuste(vel4vm['V0']),
                                        d4vm_vz=ajuste(vel4vm['W0']), 
                                        mean_bx=ajuste(magvm['bx']),
                                        mean_by=ajuste(magvm['by']), 
                                        mean_bz=ajuste(magvm['bz']),
-                                       poyn_En=ajuste(Sn), 
-                                       poyn_Et=ajuste(St), 
-                                       poyn_Es=ajuste(Ss),
-                                       poyn_intSn=int_Sn,
-                                       poyn_intSt=int_St,
-                                       poyn_intSs=int_Ss,
+                                       poyn_Sn=ajuste(Sn), 
+                                       poyn_St=ajuste(St), 
+                                       poyn_Ss=ajuste(Ss),
+                                       int_Sn=int_Sn,
+                                       int_St=int_St,
+                                       int_Ss=int_Ss,
                                        int_PIL_Sn=int_PIL_Sn,
                                        int_PIL_pos_Sn=int_PIL_pos_Sn,
                                        int_PIL_neg_Sn=int_PIL_neg_Sn,
@@ -563,6 +562,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             session.commit()
             
         except ValueError:
+            session.rollback()
             print(f'Morphology {values[6]} NOT inserted.')
             logging.debug(f'Morphology {values[6]} NOT inserted.')
         
@@ -571,7 +571,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             logging.debug(f'Morphology {values[6]} inserted.')
         
     # Doing the same for the Events.
-    events = swpc_db.find_morphology(noaa_numbers)
+    events = swpc_db.find_events(noaa_numbers)
     
     # Flatenning the results into a list and taking all the results 
     # into the database.
@@ -595,6 +595,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
             session.commit()
             
         except ValueError:
+            session.rollback()
             print(f'Events {values[6]} NOT inserted.')
             logging.debug(f'Events {values[6]} NOT inserted.')
         
@@ -610,10 +611,10 @@ def prepare(config_path, downloaded = None, delete_files = None):
         noaa_numbers.append(None)
     
     # Updating the noaa numbers into the ActiveRegion table.
-    u = sql.update(ActiveRegion).where(ActiveRegion.harp_number==harp_number)
-    u = u.values(ActiveRegion.noaa_number1=noaa_numbers[0],
-                 ActiveRegion.noaa_number1=noaa_numbers[1],
-                 ActiveRegion.noaa_number1=noaa_numbers[2])
+    u = sql.update(ActiveRegion).where(ActiveRegion.harp_number==harpnum)
+    u = u.values(noaa_number1=noaa_numbers[0],
+                 noaa_number2=noaa_numbers[1],
+                 noaa_number3=noaa_numbers[2])
     
     try:
         session.execute(u)
@@ -665,26 +666,24 @@ def prepare(config_path, downloaded = None, delete_files = None):
     
 def execute_configs(path = None):
     '''
-    This code will read multiple config files
-    and execute the 'prepare' routine for each
-    one of those files which will make the 
-    analysis for each region featured on the
-    file.
+    This code will read multiple config files and execute the 'prepare' 
+    routine for each one of those files which will then make the analysis for 
+    each region featured on the file.
     '''
     # Checking if path to configs exists.
     if path is None:
         path = '/Users/andrechicrala/Downloads/configs/'
     
-    # Searching for the config files paths.
-    path = glob.glob(path+'*.ini')
-    
     # Defining the path to move the config file to.
     path_to_move = path+'used/'
+    
+    # Searching for the config files paths.
+    path = glob.glob(path+'*.ini')
     
     # Iterating for each congif file.
     for config in path:
         print(f'Initiating the analysis for the file located ar: {config}')
-        prepare(config_path = config)
+        prepare(config_path = config, downloaded = '/Users/andrechicrala/Downloads/test/')
         # Moving the config file to the used section.
         # rsplit will separate what is after and before the last slash.
         shutil.move(config, path_to_move + config.rsplit('/',1)[-1])

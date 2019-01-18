@@ -20,7 +20,7 @@ def createconfig(harpnum, tstart, extent,
                  dbaddress = None,
                  cadence = None,
                  loadstd = False,
-                 std_path):
+                 std_path = None):
     '''
     This function creates a config file.
     The format for tstart and tend is:
@@ -99,9 +99,10 @@ def readconfig(path, display = None):
 if __name__ == '__main__':
     
     #creating the configfile
-    createconfig(harpnum = 2585, tstart = '2013.03.20_00:00:00',
-                 extent = '20d',
-                 dbaddress = 'sqlite:////Volumes/DATABASE/testdb.db')
+    createconfig(harpnum = 2585, tstart = '2013.03.27_00:00:00',
+                 extent = '1h', window_size = 20, path = '/Users/andrechicrala/Downloads/configs/',
+                 dbaddress = 'sqlite:////Users/andrechicrala/Documents/myscripts/pydave4vm/pydave4vm/addons/main.db',
+                 cadence = '720s',)
     
     #reading
     #a, b, c, d, e = readconfig('/Users/andrechicrala/Downloads/configs/666config.ini', display = True)

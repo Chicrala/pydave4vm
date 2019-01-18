@@ -32,9 +32,6 @@ import sqlalchemy as sql
 from and_db.ARsdb import Morfologia, Eventos
 from and_db.swpcminer import minersession
 
-# Importing the Sunpy packages to read the metadata. Those are for tests.
-import sunpy
-
 def parse_prefix(line, fmt):
     '''
     SO/questions/5045210/
