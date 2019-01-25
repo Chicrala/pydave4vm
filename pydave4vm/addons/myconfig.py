@@ -13,6 +13,7 @@ http://jsoc.stanford.edu/data/hmi/HARPs_movies/definitive/
 import configparser
 import os
 import json    
+from pydave4vm.addons import stdconfig
 
 def createconfig(harpnum, tstart, extent,
                  window_size = None,
@@ -100,8 +101,8 @@ if __name__ == '__main__':
     
     #creating the configfile
     createconfig(harpnum = 2585, tstart = '2013.03.27_00:00:00',
-                 extent = '1h', window_size = 20, path = '/Users/andrechicrala/Downloads/configs/',
-                 dbaddress = 'sqlite:////Users/andrechicrala/Documents/myscripts/pydave4vm/pydave4vm/addons/main.db',
+                 extent = '1h', window_size = 20, path = stdconfig.readconfig('linux','configs'),
+                 dbaddress = 'sqlite:///'+stdconfig.readconfig('linux','maindb'),
                  cadence = '720s',)
     
     #reading

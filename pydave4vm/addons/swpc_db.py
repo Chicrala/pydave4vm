@@ -27,10 +27,63 @@ import astropy.units as u
 from sunpy.physics.differential_rotation import diff_rot
 
 import sqlalchemy as sql
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import os
+
+from pydave4vm.addons.stdconfig import readconfig
 
 # Importing the SWPC database packages.
-from and_db.ARsdb import Morfologia, Eventos
-from and_db.swpcminer import minersession
+from and_db.ARsdb import Base, Morfologia, Eventos
+
+def minersession(dbaddress = None):
+    '''
+    This function will create the connection to
+    support other functions that will interact
+    with the database.
+    '''
+    #testing if dbaddress existis
+    #defaulting if not
+    while dbaddress is None:
+        #possible location for my db
+        locations = [readconfig('linux','arsdb'),
+                     readconfig('mac','arsdb')]
+        
+        #checking all the possible locations
+        for item in locations:
+            #check if the item exist
+            if os.path.isfile(item) is True:
+                #assign the value if it does
+                dbaddress=item
+        
+        #checking if the database is still not there
+        if dbaddress is None:
+            #feedback
+            print('The database could not be located in the usual paths:\n',
+                  locations[0],'\n', locations[1], '\n',
+                  'Please, check if the database is connected.')
+            
+            #Checking if it should retry
+            _=input('Retry? (y/n): ')
+            if _=='n':
+                #killing the loop
+                break
+    
+    #completing the address to the sqlite
+    #server
+    dbaddress = 'sqlite:///'+dbaddress
+    
+    #creating the engine
+    engine = create_engine(dbaddress)
+    
+    #declaratives can be accessed through a DBSession instance
+    Base.metadata.bind = engine
+    #binding the engine
+    DBSession = sessionmaker(bind = engine)
+    #binding the object methods
+    session = DBSession()
+    
+    return(session)
 
 def parse_prefix(line, fmt):
     '''
