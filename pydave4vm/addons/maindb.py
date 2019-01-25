@@ -182,7 +182,7 @@ class Observations(Base):
     
     # Defining the columns to hold the identifiers for the noaa numbers 
     # that represents the ARs being observed in this dataset.
-    noaa_number1=sql.Column(sql.Integer, nullable=False)
+    noaa_number1=sql.Column(sql.Integer, nullable=True)
     noaa_number2=sql.Column(sql.Integer, nullable=True)
     noaa_number3=sql.Column(sql.Integer, nullable=True)
     

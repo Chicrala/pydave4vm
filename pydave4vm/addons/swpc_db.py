@@ -113,13 +113,10 @@ def find_morphology(*args):
     # Looping over each arg.
     for noaa_number in args:
         # Making the database selection.
-        swpcs = sql.select([Morfologia]).where(Morfologia.noaa_number==noaa_number)
-        
-        # Querying the database.
-        rp = swpcsession.execute(swpcs)
+        swpcs = sql.select([Morfologia]).where(Morfologia.noaa_number == noaa_number)
         
         # Getting the results.
-        results[str(noaa_number)] = rp.fetchall()
+        results[str(noaa_number)] = [x for x in swpcsession.execute(swpcs)]
     
     # Closing the session.
     swpcsession.close()
@@ -141,13 +138,10 @@ def find_events(*args):
     # Looping over each arg.
     for noaa_number in args:
         # Making the database selection.
-        swpcs = sql.select([Eventos]).where(Eventos.noaa_number==noaa_number)
-        
-        # Querying the database.
-        rp = swpcsession.execute(swpcs)
+        swpcs = sql.select([Eventos]).where(Eventos.noaa_number == noaa_number)
         
         # Getting the results.
-        results[str(noaa_number)] = rp.fetchall()
+        results[str(noaa_number)] = [x for x in swpcsession.execute(swpcs)]
     
     # Closing the session.
     swpcsession.close()
@@ -158,4 +152,6 @@ if __name__ == '__main__':
     '''
     The classical testing zone
     '''
-    results = find_events(12443,12445,12447)
+    #results = find_events(12443,12445,12447)
+    
+    a = find_morphology(12443)

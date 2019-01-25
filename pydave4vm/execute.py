@@ -66,11 +66,11 @@ import shutil
 import sys
 import os
 
-# Calling the package that prepares PyDAVE4VM.
-from pydave4vm import do_dave4vm_and
+# Calling the package that will execute PyDAVE4VM.
+from pydave4vm import do_dave4vm
 
 # Importing the addons for PyDAVE4VM.
-from pydave4vm.addons import myconfig, neutralline, cubitos3, check_fits, swpc_db, downloaddata
+from pydave4vm.addons import myconfig, stdconfig, neutralline, cubitos3, check_fits, swpc_db, swpcparser, downloaddata
 from pydave4vm.addons.poyntingflux import poyntingflux
 
 # Importing the packages to operate with the database.
@@ -89,7 +89,7 @@ def ajuste(data):
     return(data.tostring())
 
 
-def prepare(config_path, downloaded = None, delete_files = None):
+def prepare(config_path, os_, downloaded = None, delete_files = None):
     '''
     This is the pre-routine to execute pydave4vm.
     Here the following steps are taken:
@@ -97,7 +97,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
         - The parameters are fetch from an external file;
         - Data is downloaded using drms to query JSOC;
         - The fits are organized into datacubes;
-        - Data is inserted into the do_dave4vm_and module;
+        - Data is inserted into the do_dave4vm module;
         - Updates on the database;
         - Log production.
         
@@ -123,7 +123,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
         # Downloading the data.
         #######################    
         # Check in the standard path if file exists.
-        std_path = '/Users/andrechicrala/Downloads/test'+ str(harpnum)+'/'
+        std_path = stdconfig.readconfig(os_,'data')+ str(harpnum)+'/'
         # If it don't, download it.
         if os.path.exists(std_path) != True:
         
@@ -245,8 +245,8 @@ def prepare(config_path, downloaded = None, delete_files = None):
     # Populating the ActiveRegion table.
     ####################################
     # Check if stamp exist to keep completing it.
-    s = sql.select([ActiveRegion.AR_id]).where(
-                ActiveRegion.harp_number == meta['harpnum'])
+    s = sql.select([ActiveRegion]).where(
+                ActiveRegion.harp_number == harpnum)
     
     # Using the result proxy to query the results.
     rp = session.execute(s)
@@ -383,8 +383,8 @@ def prepare(config_path, downloaded = None, delete_files = None):
             # Calculating the time between the images in seconds.
             dt = (t2-t1).total_seconds()        
             
-            # Calling do_dave4vm_and, which prepares pyDAVE4VM to be executed.
-            magvm, vel4vm = do_dave4vm_and.do_dave4vm(dt,bx_stop, bx_start, by_stop,
+            # Calling do_dave4vm, which prepares pyDAVE4VM to be executed.
+            magvm, vel4vm = do_dave4vm.do_dave4vm(dt,bx_stop, bx_start, by_stop,
                                                       by_start, bz_stop, bz_start,dx,
                                                       dy, window_size)
             
@@ -458,7 +458,8 @@ def prepare(config_path, downloaded = None, delete_files = None):
             
             # Appending the NOAA numbers to the overall list.
             for thing in noaa_number:
-                noaa_numbers.append(thing)
+                if thing not in noaa_numbers:
+                    noaa_numbers.append(thing)
             
             # Filling all the available slots.
             while len(noaa_number) < 3:
@@ -523,14 +524,14 @@ def prepare(config_path, downloaded = None, delete_files = None):
             logging.info('Timestamp ' + str(t2) + 
                          ' was already in the database.')
             print('Timestamp ' + str(t2) + 
-                  ' was already in the database.')       
+                  ' was already in the database.')    
+            
     ###########################################################################
     # Creating a timestamp for the analysis end.
-    analysis_end = datetime.now()
+    observations_end = datetime.now()
     
     # Logging.
-    logging.info('Observation table analysis finished at: ' + str(analysis_end))
-    logging.info('Total Execution time: ' + str(analysis_end - analysis_start))
+    logging.info('Observation table analysis finished at: ' + str(observations_end))
     ###########################################################################
     # Populating the Morphology and Events tables.
     ##############################################
@@ -538,24 +539,24 @@ def prepare(config_path, downloaded = None, delete_files = None):
     noaa_numbers = list(sorted(set(noaa_numbers)))
     
     # Getting all the morphology entries for this AR.
-    morphologies = swpc_db.find_morphology(noaa_numbers)
+    morphologies = swpcparser.morphology_seeker(None,noaa_numbers)
     
     # Flatenning the results into a list and taking all the results 
     # into the database.
-    for values in [item for sublist in list(morphologies.values()) for item in sublist]:
+    for key in sorted(morphologies.keys()):
         # Creating a new entry for the Morphology table.
         new_morph = Morphology(ar_id=ar_id,
-                               noaa_number=values[2],
-                               mcintosh=values[3],
-                               hale=values[4],
-                               daystamp_dt=values[5],
-                               daystamp_int=values[6],
-                               latitude=values[7],
-                               longitude=values[8],
-                               LL=values[9],
-                               Lo=values[10],
-                               NN=values[11],
-                               area=values[12])
+                               noaa_number=morphologies[key]['noaa_number'],
+                               mcintosh=morphologies[key]['mcintosh'],
+                               hale=morphologies[key]['hale'],
+                               daystamp_dt=morphologies[key]['daystamp_dt'],
+                               daystamp_int=morphologies[key]['daystamp_int'],
+                               latitude=morphologies[key]['latitude'],
+                               longitude=morphologies[key]['longitude'],
+                               LL=morphologies[key]['LL'],
+                               Lo=morphologies[key]['Lo'],
+                               NN=morphologies[key]['NN'],
+                               area=morphologies[key]['area'])
         
         try:
             session.add(new_morph)
@@ -563,32 +564,32 @@ def prepare(config_path, downloaded = None, delete_files = None):
             
         except ValueError:
             session.rollback()
-            print(f'Morphology {values[6]} NOT inserted.')
-            logging.debug(f'Morphology {values[6]} NOT inserted.')
+            print(f'Morphology {key} NOT inserted.')
+            logging.debug(f'Morphology {key} NOT inserted.')
         
         else:
-            print(f'Morphology {values[6]} inserted.')
-            logging.debug(f'Morphology {values[6]} inserted.')
+            print(f'Morphology {key} inserted.')
+            logging.debug(f'Morphology {key} inserted.')
         
     # Doing the same for the Events.
-    events = swpc_db.find_events(noaa_numbers)
+    events = swpcparser.event_seeker(None,noaa_numbers)
     
     # Flatenning the results into a list and taking all the results 
     # into the database.
-    for values in [item for sublist in list(events.values()) for item in sublist]:
+    for key in sorted(events.keys()):
         # Creating a new entry for the Morphology table.
         new_eve = Events(ar_id=ar_id,
-                           flareclass=values[2],
-                           event_begin_dt=values[3],
-                           event_max_dt=values[4],
-                           event_end_dt=values[5],
-                           event_begin_int=values[6],
-                           event_max_int=values[7],
-                           event_end_int=values[8],
-                           noaa_number=values[9],
-                           event_number=values[10],
-                           daystamp_dt=values[11],
-                           daystamp_int=values[12])
+                           flareclass=events[key]['Class'],
+                           event_begin_dt=events[key]['Begin'],
+                           event_max_dt=events[key]['Max'],
+                           event_end_dt=events[key]['End'],
+                           event_begin_int=events[key]['Beginint'],
+                           event_max_int=events[key]['Maxint'],
+                           event_end_int=events[key]['Endint'],
+                           noaa_number=events[key]['noaa_number'],
+                           event_number=events[key]['Event'],
+                           daystamp_dt=events[key]['daystamp_dt'],
+                           daystamp_int=events[key]['daystamp_int'])
         
         try:
             session.add(new_eve)
@@ -596,28 +597,28 @@ def prepare(config_path, downloaded = None, delete_files = None):
             
         except ValueError:
             session.rollback()
-            print(f'Events {values[6]} NOT inserted.')
-            logging.debug(f'Events {values[6]} NOT inserted.')
+            print(f'Events {key} NOT inserted.')
+            logging.debug(f'Events {key} NOT inserted.')
         
         else:
-            print(f'Events {values[6]} inserted.')
-            logging.debug(f'Events {values[6]} inserted.')
+            print(f'Events {key} inserted.')
+            logging.debug(f'Events {key} inserted.')
     
     ###########################################################################
     # Updating the NOAA number entries for the set processed.
     #########################################################
     # Filling the available slots.
-    while len(noaa_numbers) > 3:
+    while len(noaa_numbers) < 3:
         noaa_numbers.append(None)
     
-    # Updating the noaa numbers into the ActiveRegion table.
-    u = sql.update(ActiveRegion).where(ActiveRegion.harp_number==harpnum)
-    u = u.values(noaa_number1=noaa_numbers[0],
-                 noaa_number2=noaa_numbers[1],
-                 noaa_number3=noaa_numbers[2])
+    # Updating the values.    
+    query = session.query(ActiveRegion)
+    query = query.filter(ActiveRegion.AR_id == ar_id)
+    query.update({ActiveRegion.noaa_number1: noaa_numbers[0],
+                  ActiveRegion.noaa_number2: noaa_numbers[1],
+                  ActiveRegion.noaa_number3: noaa_numbers[2]})
     
     try:
-        session.execute(u)
         session.commit()
     
     except ValueError:
@@ -635,9 +636,15 @@ def prepare(config_path, downloaded = None, delete_files = None):
     print('Session closed')
     logging.info('Session closed')
     
+    analysis_end = datetime.datetime.now()
+    
     # Final feedback.
-    print('Active region ' + str(meta['noaa_ar']) + ' analysis completed.')
-    print('Total Execution time: ', str(analysis_end - analysis_start))
+    for ar in noaa_numbers:
+        if ar is not None:
+            print('Active region ' + str(meta['noaa_ar']) + ' analysis completed.')
+            print('Total Execution time: ', str(analysis_end - analysis_start))
+        
+        logging.info('Total Execution time: ' + str(analysis_end - analysis_start))
     
     if delete_files == True:
         # Deleting files from the system.
@@ -664,7 +671,7 @@ def prepare(config_path, downloaded = None, delete_files = None):
     
     return
     
-def execute_configs(path = None):
+def execute_configs(os_='linux',path=None):
     '''
     This code will read multiple config files and execute the 'prepare' 
     routine for each one of those files which will then make the analysis for 
@@ -672,7 +679,7 @@ def execute_configs(path = None):
     '''
     # Checking if path to configs exists.
     if path is None:
-        path = '/Users/andrechicrala/Downloads/configs/'
+        path = stdconfig.readconfig(os_,'configs')
     
     # Defining the path to move the config file to.
     path_to_move = path+'used/'
@@ -683,13 +690,13 @@ def execute_configs(path = None):
     # Iterating for each congif file.
     for config in path:
         print(f'Initiating the analysis for the file located ar: {config}')
-        prepare(config_path = config, downloaded = '/Users/andrechicrala/Downloads/test/')
+        prepare(config_path=config, os_=os_)
         # Moving the config file to the used section.
         # rsplit will separate what is after and before the last slash.
         shutil.move(config, path_to_move + config.rsplit('/',1)[-1])
     
     # Feedback.    
-    print('Finished =D')
+    print('Finished.')
     
     return
 
