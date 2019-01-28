@@ -31,10 +31,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
 
-from pydave4vm.addons.stdconfig import readconfig
+from pydave4vm.addons import stdconfig
 
 # Importing the SWPC database packages.
-from and_db.ARsdb import Base, Morfologia, Eventos
+from and_db.ARsdb import Base, ARs, Morfologia, Eventos
 
 def minersession(dbaddress = None):
     '''
@@ -42,45 +42,46 @@ def minersession(dbaddress = None):
     support other functions that will interact
     with the database.
     '''
-    #testing if dbaddress existis
-    #defaulting if not
+    # Testing if dbaddress existis defaulting if not.
     while dbaddress is None:
-        #possible location for my db
-        locations = [readconfig('linux','arsdb'),
-                     readconfig('mac','arsdb')]
+        # Possible location for my db.
+        locations = [stdconfig.readconfig('linux','arsdb'),
+                     stdconfig.readconfig('mac','arsdb'),
+                     '/Users/andrechicrala/Downloads/SWPC/ARsdb.db']
         
-        #checking all the possible locations
+        # Checking all the possible locations.
         for item in locations:
-            #check if the item exist
+            # Check if the item exist.
             if os.path.isfile(item) is True:
-                #assign the value if it does
+                # Assign the value if it does.
                 dbaddress=item
         
-        #checking if the database is still not there
+        # Checking if the database is still not there.
         if dbaddress is None:
-            #feedback
+            # Feedback.
             print('The database could not be located in the usual paths:\n',
                   locations[0],'\n', locations[1], '\n',
                   'Please, check if the database is connected.')
             
-            #Checking if it should retry
+            # Checking if it should retry.
             _=input('Retry? (y/n): ')
             if _=='n':
-                #killing the loop
+                # Killing the loop.
                 break
     
-    #completing the address to the sqlite
-    #server
+    # Completing the address to the sqlite server.
     dbaddress = 'sqlite:///'+dbaddress
     
-    #creating the engine
+    # Creating the engine.
     engine = create_engine(dbaddress)
     
-    #declaratives can be accessed through a DBSession instance
+    # Declaratives can be accessed through a DBSession instance.
     Base.metadata.bind = engine
-    #binding the engine
+    
+    # Binding the engine.
     DBSession = sessionmaker(bind = engine)
-    #binding the object methods
+    
+    # Binding the object methods.
     session = DBSession()
     
     return(session)
@@ -200,11 +201,40 @@ def find_events(*args):
     swpcsession.close()
     
     return(results)
-
+    
+def find_max_hale_class(*args):
+    '''
+    This function will use the noaa number to query the database made from the
+    SRS files of SWPC and get the morphology information stored in there.
+    '''
+    
+    # Starting the session for the ARs database.
+    swpcsession = minersession()
+    
+    # Creating an empty dictionary to store the results.
+    results = []
+    
+    # Looping over each arg.
+    for noaa_number in args:
+        # Making the database selection.
+        swpcs = sql.select([ARs.maxhaleclass]).where(ARs.noaa_number == noaa_number)
+        
+        # Making the result proxy.
+        rp = swpcsession.execute(swpcs)
+        # Getting the results.
+        results.append(rp.fetchone()[0])
+    
+    # Closing the session.
+    swpcsession.close()
+    
+    return(results)
+    
 if __name__ == '__main__':
     '''
     The classical testing zone
     '''
     #results = find_events(12443,12445,12447)
+    swpcsession = minersession()
     
-    a = find_morphology(12443)
+    #a = find_max_hale_class(12443,12445,None)
+    #print(a)

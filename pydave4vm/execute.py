@@ -314,7 +314,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         print(f'The Active Region {AR[0][1],AR[0][2]} is already in the '
               f'database with the id: {AR[0][0]}')
         
-        # Assigning the ar number. Redundant? Check!!!
+        # Assigning the ar number.
         ar_id = AR[0][0]
         
         # Checking if the result is an int.
@@ -361,6 +361,18 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             print('Value Error on date-obs, t_rec used instead of date-obs.')
             logging.debug('Value Error on date-obs, t_rec used instead of date-obs.')
             
+        # Checking if the timedelta is consistent.
+        if abs((t2-t1).seconds-720) > 7:
+            print('Time delta deviated by more than 1%. \n ',
+                  f't1: {t1} \n',
+                  f't2: {t2} \n',
+                  f'Deltat: {(t2-t1).seconds} \n')
+            logging.debug('Time delta deviated by more than 1%. \n ',
+                          f't1: {t1} \n',
+                          f't2: {t2} \n',
+                          f'Deltat: {(t2-t1).seconds} \n')
+            continue
+            
         # Checking if the shape is consistent among the observations.
         if np.shape(bx_start) != np.shape(bx_stop):
             print(f'Shape not consistent. bx_start({t1}): {np.shape(bx_start)}, bx_stop({t2}): {np.shape(bx_stop)}')
@@ -369,16 +381,14 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             continue
             
         # Checking if the timestamp already exists.
-        s = sql.select([Observations.OBS_id]).where(sql.and_(
-                Observations.timestamp_dt == t2,
-                Observations.ar_id == ar_id))
-        rp = session.execute(s)
-        results = rp.fetchall()
+        check = session.query(sql.exists().where(sql.and_(Observations.ar_id == ar_id,
+                                                          Observations.timestamp_int == int(t2.strftime('%Y%m%d%H%M%S'))))).scalar()
+        
         #######################################################################
         # Obtaining the velocities with PyDAVE4VM.
         ##########################################
         # Work on a new timestamp if the result is not yet on the database
-        if results == []:
+        if check is False:
         
             # Calculating the time between the images in seconds.
             dt = (t2-t1).total_seconds()        
@@ -512,9 +522,9 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                 
             else:
                 logging.info('Timestamp ' + str(t2) + ' created. '  + 
-                  f'({i}/{number_of_obs})')
+                            f'({i}/{number_of_obs})')
                 print('Timestamp ' + str(t2) + ' created. '  + 
-                  f'({i}/{number_of_obs})')
+                     f'({i}/{number_of_obs})')
                 
             # Feedback.
             print(meta_cube_Bp[0]['t_obs'], ' Processed! ' + 
@@ -524,8 +534,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             logging.info('Timestamp ' + str(t2) + 
                          ' was already in the database.')
             print('Timestamp ' + str(t2) + 
-                  ' was already in the database.')    
-            
+                  ' was already in the database.')
+            continue
     ###########################################################################
     # Creating a timestamp for the analysis end.
     observations_end = datetime.now()
@@ -544,6 +554,15 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     # Flatenning the results into a list and taking all the results 
     # into the database.
     for key in sorted(morphologies.keys()):
+        # Checking if this morphology already exists within the db.
+        check = session.query(sql.exists().where(sql.and_(Morphology.noaa_number == morphologies[key]['noaa_number'],
+                                                          Morphology.daystamp_int == morphologies[key]['daystamp_int']))).scalar()
+        
+        if check is True:
+            print(f'Morphology {key} ALREADY inserted.')
+            logging.info(f'Morphology {key} ALREADY inserted.')
+            continue
+        
         # Creating a new entry for the Morphology table.
         new_morph = Morphology(ar_id=ar_id,
                                noaa_number=morphologies[key]['noaa_number'],
@@ -565,11 +584,11 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         except ValueError:
             session.rollback()
             print(f'Morphology {key} NOT inserted.')
-            logging.debug(f'Morphology {key} NOT inserted.')
+            logging.info(f'Morphology {key} NOT inserted.')
         
         else:
             print(f'Morphology {key} inserted.')
-            logging.debug(f'Morphology {key} inserted.')
+            logging.info(f'Morphology {key} inserted.')
         
     # Doing the same for the Events.
     events = swpcparser.event_seeker(None,noaa_numbers)
@@ -577,6 +596,14 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     # Flatenning the results into a list and taking all the results 
     # into the database.
     for key in sorted(events.keys()):
+        # Checking if this morphology already exists within the db.
+        check = session.query(sql.exists().where(Events.event_number == events[key]['Event'])).scalar()
+        
+        if check is True:
+            print(f'Event {key} ALREADY inserted.')
+            logging.info(f'Event {key} ALREADY inserted.')
+            continue
+        
         # Creating a new entry for the Morphology table.
         new_eve = Events(ar_id=ar_id,
                            flareclass=events[key]['Class'],
@@ -598,25 +625,34 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         except ValueError:
             session.rollback()
             print(f'Events {key} NOT inserted.')
-            logging.debug(f'Events {key} NOT inserted.')
+            logging.info(f'Events {key} NOT inserted.')
         
         else:
             print(f'Events {key} inserted.')
-            logging.debug(f'Events {key} inserted.')
-    
+            logging.info(f'Events {key} inserted.')
+            
     ###########################################################################
-    # Updating the NOAA number entries for the set processed.
-    #########################################################
+    # Updating the NOAA number and max hale class entries for the set.
+    ##################################################################
+    # Searching for the max hale class of the ARs.
+    max_hale_classes = swpc_db.find_max_hale_class(noaa_numbers)
+    
     # Filling the available slots.
-    while len(noaa_numbers) < 3:
+    while len(noaa_numbers) <3:
         noaa_numbers.append(None)
+        
+    while len(max_hale_classes) <3:
+        max_hale_classes.append(None)
     
     # Updating the values.    
     query = session.query(ActiveRegion)
     query = query.filter(ActiveRegion.AR_id == ar_id)
     query.update({ActiveRegion.noaa_number1: noaa_numbers[0],
                   ActiveRegion.noaa_number2: noaa_numbers[1],
-                  ActiveRegion.noaa_number3: noaa_numbers[2]})
+                  ActiveRegion.noaa_number3: noaa_numbers[2],
+                  ActiveRegion.max_hale_class1: max_hale_classes[0],
+                  ActiveRegion.max_hale_class2: max_hale_classes[1],
+                  ActiveRegion.max_hale_class3: max_hale_classes[2]})
     
     try:
         session.commit()
@@ -627,7 +663,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     
     else:
         print('Active Region noaa numbers updated.')
-        logging.debug('Active Region noaa numbers updated.')
+        logging.info('Active Region noaa numbers updated.')
+    
     ###########################################################################
     # Ending the execution.
     #######################
@@ -704,4 +741,4 @@ if __name__ == '__main__':
     '''
     test zone
     '''
-    execute_configs()
+    execute_configs('mac')

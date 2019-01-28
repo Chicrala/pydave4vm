@@ -96,12 +96,14 @@ def readconfig(os,option):
     return(path)
 
 if __name__ == '__main__':
-    
+    '''
+    Test zone.
+    '''
     #creating the configfile
     #createconfig()
     
     #a = readconfig('mac','data')
-    
+    print('a')
     #reading
     #a, b, c, d, e = readconfig('/Users/andrechicrala/Downloads/configs/666config.ini', display = True)
 
