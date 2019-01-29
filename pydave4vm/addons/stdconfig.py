@@ -63,7 +63,7 @@ def createconfig():
     return
 
 
-def readconfig(os,option):
+def readconfig(os_,option):
     '''
     This function will read the config file and return its parameters.
     '''
@@ -87,7 +87,7 @@ def readconfig(os,option):
     # Making a try/except statement.
     try: 
         # Getting the parameters.
-        path = options[os][option]
+        path = options[os_][option]
         
     except:
         # Printing an error message.
