@@ -451,7 +451,10 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                 # Poynting flux calculation.
                 ############################
                 # Defaulting the Poynting flux and columnshape.
-                Sn = St = Ss = int_Sn = int_St = int_Ss = columnshape = None
+                Sn = St = Ss = int_Sn = int_St = int_Ss = columnshape = logR = None
+                int_PIL_Sn = int_PIL_pos_Sn = int_PIL_neg_Sn = None
+                int_PIL_St = int_PIL_pos_St = int_PIL_neg_St = None
+                int_PIL_Ss = int_PIL_pos_Ss = int_PIL_neg_Ss = None
                 
                 # Logging.
                 logging.info('The apperture problem could not be solved. ' +
