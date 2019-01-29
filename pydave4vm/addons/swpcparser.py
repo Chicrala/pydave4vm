@@ -43,7 +43,7 @@ def parse_lat_lon(texto):
     
     return(latitude, longitude)
 
-def event_seeker(path=None, os_='linux',*args):
+def event_seeker(os_,*args):
     '''
     This function will open an events file and look for each line if the given 
     AR (specified by its NOAA number) is there. If so, this function should 
@@ -54,10 +54,7 @@ def event_seeker(path=None, os_='linux',*args):
     '''
     
     # Defaulting path if none is given.
-    if path is None:
-        # Assigning
-        path = stdconfig.readconfig(os_,'swpc')+'Events/'
-        
+    path = stdconfig.readconfig(os_,'swpc')+'Events/'    
         
     # Listing the items within the directory.
     files = sorted(glob.glob(path+'*events.txt'))
@@ -168,7 +165,7 @@ def event_seeker(path=None, os_='linux',*args):
         
     return(events)
     
-def morphology_seeker(path=None, os_='linux', *args):
+def morphology_seeker(os_, *args):
     '''
     This function will open an SRS file
     and look for each line if the given AR
@@ -180,12 +177,9 @@ def morphology_seeker(path=None, os_='linux', *args):
     will leave all the SRS files in the
     same folder.
     '''
-    
-    # Defaulting path if none is given.
-    if path is None:
-        # assigning
-        path = path = stdconfig.readconfig(os_,'swpc')+'/SolarRegionSummary/SRS/'
-        
+    # assigning
+    path = stdconfig.readconfig(os_,'swpc')+'SolarRegionSummary/SRS/'
+    print(path)        
     # Listing the items within the directory.
     files = sorted(glob.glob(path+'*.txt'))
     

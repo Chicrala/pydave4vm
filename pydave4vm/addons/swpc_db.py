@@ -215,7 +215,7 @@ def find_max_hale_class(*args):
     results = []
     
     # Looping over each arg.
-    for noaa_number in args:
+    for noaa_number in args[0]:
         # Making the database selection.
         swpcs = sql.select([ARs.maxhaleclass]).where(ARs.noaa_number == noaa_number)
         

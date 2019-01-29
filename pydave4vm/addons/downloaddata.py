@@ -14,7 +14,7 @@ import drms
 import time
 import os
 import glob
-
+from pydave4vm.addons import stdconfig
 
 def downfido(harpnum, tstart, tend):
     '''
@@ -219,8 +219,8 @@ def downdrms(harpnum, tstart, extent, cadence, path = None):
     
     # checking path
     if path is None:
-        
-        out_dir = '/Users/andrechicrala/Downloads/'+str(harpnum)+'/'
+        # Defaulting for the hardrive connected on linux.
+        out_dir = stdconfig.readconfig('linux','data')+str(harpnum)+'/'
         
         # checking if the path exists
         if not os.path.exists(out_dir):

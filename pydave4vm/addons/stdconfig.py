@@ -76,11 +76,13 @@ def readconfig(os_,option):
     options = {'linux':{'data':config['Paths_linux']['data'],
                         'maindb':config['Paths_linux']['maindb'],
                         'arsdb':config['Paths_linux']['arsdb'],
-                        'configs':config['Paths_linux']['configs']},
-               'mac':{'data':config['Paths_linux']['data'],
-                        'maindb':config['Paths_linux']['maindb'],
-                        'arsdb':config['Paths_linux']['arsdb'],
-                        'configs':config['Paths_linux']['configs']}}
+                        'configs':config['Paths_linux']['configs'],
+                        'swpc':config['Paths_linux']['swpc']},
+               'mac':{'data':config['Paths_mac']['data'],
+                        'maindb':config['Paths_mac']['maindb'],
+                        'arsdb':config['Paths_mac']['arsdb'],
+                        'configs':config['Paths_mac']['configs'],
+                        'swpc':config['Paths_mac']['swpc']}}
     
     # Checking the option
     
@@ -101,9 +103,3 @@ if __name__ == '__main__':
     '''
     #creating the configfile
     createconfig()
-    
-    #a = readconfig('mac','data')
-    print('a')
-    #reading
-    #a, b, c, d, e = readconfig('/Users/andrechicrala/Downloads/configs/666config.ini', display = True)
-

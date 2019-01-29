@@ -552,7 +552,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     noaa_numbers = list(sorted(set(noaa_numbers)))
     
     # Getting all the morphology entries for this AR.
-    morphologies = swpcparser.morphology_seeker(None,noaa_numbers)
+    morphologies = swpcparser.morphology_seeker(os_,noaa_numbers)
     
     # Flatenning the results into a list and taking all the results 
     # into the database.
@@ -594,7 +594,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             logging.info(f'Morphology {key} inserted.')
         
     # Doing the same for the Events.
-    events = swpcparser.event_seeker(None,noaa_numbers)
+    events = swpcparser.event_seeker(os_,noaa_numbers)
     
     # Flatenning the results into a list and taking all the results 
     # into the database.
@@ -647,6 +647,11 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     while len(max_hale_classes) <3:
         max_hale_classes.append(None)
     
+    print('TESTS')
+    for item in noaa_numbers:
+        print(item,type(item))
+    for item in max_hale_classes:
+        print(item,type(item))
     # Updating the values.    
     query = session.query(ActiveRegion)
     query = query.filter(ActiveRegion.AR_id == ar_id)
@@ -676,7 +681,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     print('Session closed')
     logging.info('Session closed')
     
-    analysis_end = datetime.datetime.now()
+    analysis_end = datetime.now()
     
     # Final feedback.
     for ar in noaa_numbers:
@@ -744,4 +749,4 @@ if __name__ == '__main__':
     '''
     test zone
     '''
-    execute_configs('mac')
+    execute_configs('linux')
