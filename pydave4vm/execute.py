@@ -411,6 +411,36 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                 
                 columnshape = np.shape(vel4vm['U0'])[0]
                 
+                ###############################################################
+                # Integration around the PILS.
+                ##############################
+                # Creating the PIL gaussian broadening mask.
+                pil_gb_map = neutralline.PIL(magvm['bz'], gaussian=True)
+                
+                # Testing if the PIL actually exists.
+                if np.sum(pil_gb_map) > 0.1:
+                    # Integrating the Poynting flux components along the PIL.
+                    int_PIL_Sn = np.sum(np.multiply(Sn,pil_gb_map))
+                    int_PIL_pos_Sn = np.sum(np.multiply(np.multiply(Sn,(Sn > 0).astype(float)),
+                                                        pil_gb_map))
+                    int_PIL_neg_Sn = np.sum(np.multiply(np.multiply(Sn,(Sn < 0).astype(float)),
+                                                        pil_gb_map))
+                    
+                    int_PIL_St = np.sum(np.multiply(St,pil_gb_map))
+                    int_PIL_pos_St = np.sum(np.multiply(np.multiply(St,(St > 0).astype(float)),
+                                                        pil_gb_map))
+                    int_PIL_neg_St = np.sum(np.multiply(np.multiply(St,(St < 0).astype(float)),
+                                                        pil_gb_map))
+                    
+                    int_PIL_Ss = np.sum(np.multiply(Ss,pil_gb_map))
+                    int_PIL_pos_Ss = np.sum(np.multiply(np.multiply(Ss,(Ss > 0).astype(float)),
+                                                        pil_gb_map))
+                    int_PIL_neg_Ss = np.sum(np.multiply(np.multiply(Ss,(Ss < 0).astype(float)),
+                                                        pil_gb_map))
+                    
+                    # Calculating Schrijver's R.
+                    logR = np.log10(np.sum(np.absolute(np.multiply(magvm['bz'],
+                                                                   pil_gb_map))))
                 # Logging.
                 logging.info('The apperture problem could be solved, data processed.')
                 # Prints to state progress.
@@ -428,37 +458,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                              f'({i}/{number_of_obs})')
                 # Prints to state progress.
                 print('The apperture problem could not be solved. ' + 
-                      f'({i}/{number_of_obs})')    
-            ###################################################################
-            # Integration around the PILS.
-            ##############################
-            # Creating the PIL gaussian broadening mask.
-            pil_gb_map = neutralline.PIL(magvm['bz'], gaussian=True)
-            
-            # Testing if the PIL actually exists.
-            if np.sum(pil_gb_map) > 0.1:
-                # Integrating the Poynting flux components along the PIL.
-                int_PIL_Sn = np.sum(np.multiply(Sn,pil_gb_map))
-                int_PIL_pos_Sn = np.sum(np.multiply(np.multiply(Sn,(Sn > 0).astype(float)),
-                                                    pil_gb_map))
-                int_PIL_neg_Sn = np.sum(np.multiply(np.multiply(Sn,(Sn < 0).astype(float)),
-                                                    pil_gb_map))
-                
-                int_PIL_St = np.sum(np.multiply(St,pil_gb_map))
-                int_PIL_pos_St = np.sum(np.multiply(np.multiply(St,(St > 0).astype(float)),
-                                                    pil_gb_map))
-                int_PIL_neg_St = np.sum(np.multiply(np.multiply(St,(St < 0).astype(float)),
-                                                    pil_gb_map))
-                
-                int_PIL_Ss = np.sum(np.multiply(Ss,pil_gb_map))
-                int_PIL_pos_Ss = np.sum(np.multiply(np.multiply(Ss,(Ss > 0).astype(float)),
-                                                    pil_gb_map))
-                int_PIL_neg_Ss = np.sum(np.multiply(np.multiply(Ss,(Ss < 0).astype(float)),
-                                                    pil_gb_map))
-                
-                # Calculating Schrijver's R.
-                logR = np.log10(np.sum(np.absolute(np.multiply(magvm['bz'],
-                                                               pil_gb_map))))
+                      f'({i}/{number_of_obs})')
             ###################################################################
             # Finding the NOAA numbers of these observations.
             #################################################
