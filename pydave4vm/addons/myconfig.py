@@ -100,7 +100,7 @@ def readconfig(path, display = None):
 if __name__ == '__main__':
     
     #creating the configfile
-    createconfig(harpnum = 2585, tstart = '2013.03.27_00:00:00',
+    createconfig(harpnum = 4448, tstart = '2014.08.16_00:00:00',
                  extent = '1h', window_size = 20, path = stdconfig.readconfig('linux','configs'),
                  dbaddress = 'sqlite:///'+stdconfig.readconfig('linux','maindb'),
                  cadence = '720s',)

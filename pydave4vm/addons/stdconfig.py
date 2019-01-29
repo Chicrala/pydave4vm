@@ -100,7 +100,7 @@ if __name__ == '__main__':
     Test zone.
     '''
     #creating the configfile
-    #createconfig()
+    createconfig()
     
     #a = readconfig('mac','data')
     print('a')
