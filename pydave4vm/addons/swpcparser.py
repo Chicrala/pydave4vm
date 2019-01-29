@@ -8,7 +8,7 @@ Created on Mon Sep  3 15:19:08 2018
 import glob
 import re
 from datetime import datetime, timedelta
-from pydave4.addons import stdconfig
+from pydave4vm.addons import stdconfig
 
 def find_between(s, first, last):
     '''

@@ -235,10 +235,10 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     # Starting the database session.
     ################################
     # Creating the sql engine.
-    engine = create_engine(dbaddress, pool_pre_ping=True)
+    engine = create_engine(dbaddress)
     
     # Binding the engine.
-    DBSession = sessionmaker(bind = engine)
+    DBSession = sessionmaker(bind=engine)
     # Creating the session.
     session = DBSession()
     ###########################################################################

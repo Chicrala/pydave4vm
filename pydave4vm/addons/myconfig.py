@@ -16,13 +16,12 @@ import json
 from pydave4vm.addons import stdconfig
 
 def createconfig(harpnum, tstart, extent,
-                 window_size=None,
-                 path=None,
-                 dbaddress=None,
-                 cadence=None,
-                 loadstd=False,
-                 std_path=None,
-                 os_='linux'):
+                 window_size = None,
+                 path = None,
+                 dbaddress = None,
+                 cadence = None,
+                 loadstd = False,
+                 std_path = None):
     '''
     This function creates a config file.
     The format for tstart and tend is:
@@ -35,9 +34,9 @@ def createconfig(harpnum, tstart, extent,
     if loadstd is True:
         standards = json.load(std_path)
         window_size = standards['window_size']
-        path = standards['path']
-        dbaddress = readconfig(os_,'maindb')
-        cadence = standards['cadence']
+        path = ['path']
+        dbaddress = ['dbaddress']
+        cadence = ['cadence']
     
     # Defining the configuration file name.
     configfile_name = path + str(harpnum) + 'config.ini'
@@ -101,7 +100,7 @@ def readconfig(path, display = None):
 if __name__ == '__main__':
     
     #creating the configfile
-    createconfig(harpnum = 2585, tstart = '2013.04.02_00:00:00',
+    createconfig(harpnum = 4448, tstart = '2014.08.16_00:00:00',
                  extent = '1h', window_size = 20, path = stdconfig.readconfig('linux','configs'),
                  dbaddress = 'sqlite:///'+stdconfig.readconfig('linux','maindb'),
                  cadence = '720s',)
