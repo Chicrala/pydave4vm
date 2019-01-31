@@ -162,7 +162,7 @@ def find_morphology(*args):
     results = {}
     
     # Looping over each arg.
-    for noaa_number in args:
+    for noaa_number in args[0]:
         # Making the database selection.
         swpcs = sql.select([Morfologia]).where(Morfologia.noaa_number == noaa_number)
         
@@ -212,7 +212,7 @@ def find_max_hale_class(*args):
     results = []
     
     # Looping over each arg.
-    for noaa_number in args:
+    for noaa_number in args[0]:
         # Making the database selection.
         swpcs = sql.select([ARs.maxhaleclass]).where(ARs.noaa_number == noaa_number)
         
@@ -226,14 +226,14 @@ def find_max_hale_class(*args):
     
     return(results)
 
-def test_find_noaa_number():
+def test_find_noaa_number(hnum):
     import sunpy.map
     import glob
     print('Testing getting the noaa numbers.')
     #results = find_events(12443,12445,12447)
     #swpcsession = minersession()
     noaa_numbers = []
-    paths = glob.glob('/media/w17016451/usb1/data2/2587/*Bp.fits')
+    paths = glob.glob(f'/media/w17016451/usb1/data2/{hnum}/*Bp.fits')
     for path in paths:
         meta = sunpy.map.Map(path).meta
         noaa_number = find_noaa_number(meta)
@@ -242,18 +242,20 @@ def test_find_noaa_number():
             noaa_numbers.append(noaa_number)
 
     print('NOAA NUMBERS: ', noaa_numbers)
-    return
+    return(noaa_numbers)
     
 if __name__ == '__main__':
     '''
     The classical testing zone
     '''
-    
-    noaa_numbers = [11705]
-    print('Testing finding the max hale class.')
-    for noaa_number in noaa_numbers:
-        print('Getting the morphologies for: ',noaa_number, ' \n ', find_morphology(noaa_number))
-        print('The max hale class for this region is: ', find_max_hale_class(noaa_number))
-    
+    harps = [2587,3686,3688,4448,5011,5026,6223,6555,6558,6620,6846,7256]
+    for hnum in harps:
+        print(f'Testing {hnum}.')
+        noaa_numbers = test_find_noaa_number(hnum)
+        print('Testing finding the max hale class.')
+        for noaa_number in noaa_numbers:
+            print('Getting the morphologies for: ',noaa_number, ' \n ', find_morphology(noaa_number))
+            print('The max hale class for this region is: ', find_max_hale_class(noaa_number))
+        print('-------------------------------------------------------------------------- \n')
     #a = find_max_hale_class(12443,12445,None)
     #print(a)
