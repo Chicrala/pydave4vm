@@ -686,9 +686,9 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     # Final feedback.
     for ar in noaa_numbers:
         if ar is not None:
-            print('Active region ' + str(meta['noaa_ar']) + ' analysis completed.')
-            print('Total Execution time: ', str(analysis_end - analysis_start))
+            print(f'Active region {ar} analysis completed.')
         
+        print('Total Execution time: ', str(analysis_end - analysis_start))
         logging.info('Total Execution time: ' + str(analysis_end - analysis_start))
     
     if delete_files == True:

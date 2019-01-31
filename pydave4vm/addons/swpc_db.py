@@ -134,11 +134,8 @@ def find_noaa_number(meta_data):
     # Creating an empty list to append the NOAA numbers later on.
     noaa_numbers = []
     
-    # Querying the database.
-    rp = swpcsession.execute(swpcs)
-    
     # Iterating over the results.
-    for result in rp:
+    for result in swpcsession.execute(swpcs):
         # Rotating the Longitude.
         rotated_longitude = result[0]*u.deg + diff_rot(deltat, result[1]*u.deg)
         
@@ -215,7 +212,7 @@ def find_max_hale_class(*args):
     results = []
     
     # Looping over each arg.
-    for noaa_number in args[0]:
+    for noaa_number in args:
         # Making the database selection.
         swpcs = sql.select([ARs.maxhaleclass]).where(ARs.noaa_number == noaa_number)
         
@@ -228,13 +225,35 @@ def find_max_hale_class(*args):
     swpcsession.close()
     
     return(results)
+
+def test_find_noaa_number():
+    import sunpy.map
+    import glob
+    print('Testing getting the noaa numbers.')
+    #results = find_events(12443,12445,12447)
+    #swpcsession = minersession()
+    noaa_numbers = []
+    paths = glob.glob('/media/w17016451/usb1/data2/2587/*Bp.fits')
+    for path in paths:
+        meta = sunpy.map.Map(path).meta
+        noaa_number = find_noaa_number(meta)
+        if noaa_number not in noaa_numbers and noaa_number != []:
+            print(f'New NOAA number found: {noaa_number}')
+            noaa_numbers.append(noaa_number)
+
+    print('NOAA NUMBERS: ', noaa_numbers)
+    return
     
 if __name__ == '__main__':
     '''
     The classical testing zone
     '''
-    #results = find_events(12443,12445,12447)
-    swpcsession = minersession()
+    
+    noaa_numbers = [11705]
+    print('Testing finding the max hale class.')
+    for noaa_number in noaa_numbers:
+        print('Getting the morphologies for: ',noaa_number, ' \n ', find_morphology(noaa_number))
+        print('The max hale class for this region is: ', find_max_hale_class(noaa_number))
     
     #a = find_max_hale_class(12443,12445,None)
     #print(a)
