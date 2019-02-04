@@ -15,108 +15,29 @@ import time
 import os
 import glob
 from pydave4vm.addons import stdconfig
+from datetime import datetime, timedelta
 
-def downfido(harpnum, tstart, tend):
+def missed(requests,directory):
     '''
-    This function takes the harp number
-    assigned to an AR and the initial and
-    final time desired to fetch the data
-    from a 'hmi.sharp_cea_720s' data series.
-    
-    The format for tstart and tend is:
-        '2014-01-01T00:00:00'
-    
-    The Harp number will be converted to a
-    string within the code.
-    
-    It will then download the magnetic
-    field vector in cilindrical components.
+    Support function to check the directory for the missing files.
+    Using this function the missing files variable setting will be
+    confined to this namespace.
     '''
-    # using Fido search to look for results
-    res = Fido.search(a.jsoc.Time(tstart, tend),
-                      # specifying the data series
-                      a.jsoc.Series('hmi.sharp_cea_720s'),
-                      # adding my email to be notified
-                      # this is mandatory and the email
-                      # must be registered with JSOC
-                      a.jsoc.Notify('andrechicrala@gmail.com'),
-                      # setting the harpnumber as primekey
-                      # for this search
-                      a.jsoc.PrimeKey('HARPNUM', str(harpnum)),
-                      # specifying which segments will be
-                      # queried
-                      a.jsoc.Segment('Bp') &\
-                      a.jsoc.Segment('Bt') &\
-                      a.jsoc.Segment('Br'))
+    # Comparing the search result and how many files were downloaded.
+    missing_files = []
     
-    # download files showing a progress bar
-    Fido.fetch(res, progress = True)
-    
-    return
+    if len(requests.data) != len(glob.glob(directory+'*.fits')):
+            print('The number of files downloaded do not match with the search results.')
+            
+            # Checking which files are missing.
+            for file in requests.data['filename']:
+                if file not in glob.glob(directory+'*.fits'):
+                    missing_files.append(file)
+    else:
+        print(f'No missing files.')
+        missing_files = []
 
-def downjsoc(harpnum, tstart, tend, path = None):
-    '''
-    Unlike the previous function, this one
-    uses the Jsoc module from Sunpy.
-    
-    This function takes the harp number
-    assigned to an AR and the initial and
-    final time desired to fetch the data
-    from a 'hmi.sharp_cea_720s' data series.
-    
-    The format for tstart and tend is:
-        '2014-01-01T00:00:00'
-    
-    The Harp number will be converted to a
-    string within the code.
-    
-    It will then download the magnetic
-    field vector in cilindrical components.
-    '''
-    
-    # checking path
-    if path is None:
-        pass
-    
-    # creating the client instance
-    client = jsoc.JSOCClient()
-    
-    # querying
-    res = client.search(a.jsoc.Time(tstart, tend),
-                      # specifying the data series
-                      a.jsoc.Series('hmi.sharp_cea_720s'),
-                      # adding my email to be notified
-                      # this is mandatory and the email
-                      # must be registered with JSOC
-                      a.jsoc.Notify('andrechicrala@gmail.com'),
-                      # setting the harpnumber as primekey
-                      # for this search
-                      a.jsoc.PrimeKey('HARPNUM', str(harpnum)),
-                      # specifying which segments will be
-                      # queried
-                      a.jsoc.Segment('Bp') &\
-                      a.jsoc.Segment('Bt') &\
-                      a.jsoc.Segment('Br'))
-    
-    # creating the request object
-    # it contains the query id and status
-    # the data can only be downloaded when status
-    # is 0
-    requests = client.request_data(res)
-    
-    # waiting for the query status to change
-    while requests.status != 0:
-        
-        print('Request status: ', requests.status)
-        print('Going to sleep...zZz...')
-        time.sleep(60)
-    
-    # getting the request
-    res = client.get_request(requests, path = path)
-    # adding a progress bar
-    res.wait(progress=True)
-    
-    return
+    return(missing_files)
 
 def check_missing_files(harpnum, directory, requests=None, tstart=None, 
                         extent=None, cadence=None):
@@ -145,51 +66,39 @@ def check_missing_files(harpnum, directory, requests=None, tstart=None,
     # Creating a list of the downloaded files.
     files = [x.replace(directory,'') for x in glob.glob(directory+'*.fits')]
     
-    # Comparing the search result and how many files were downloaded.
-    missing_files = []
-    
     # Making three attempts to get the
     for i in range(3):
-        if len(requests.data) != len(files):
-            print('The number of files downloaded do not match with the search results.')
-            
-            # Checking which files are missing.
-            for file in requests.data['filename']:
-                if file not in files:
-                    missing_files.append(file)
-                    
-            # Attempting to download the missing files.
-            print('Trying to download the remaining files')
-            for file in missing_files:
-                # Taking the day stamp of the missing file and re-formatting it.
-                daystamp = file[24:28]+'-'+file[28:30]+'-'+file[30:32]
-                
-                # Taking the hour stamp of the missing file and subtracting 12 min.
-                hourstamp = str(int(file[33:39]) - 1200)
+        # Flagging the missing files
+        missing_files = missed(requests,directory)
         
-                # Re-formatting the hourstamp.
-                hourstamp = hourstamp[0:2]+':'+hourstamp[2:4]+':'+hourstamp[4:6]
+        # Attempting to download the missing files.
+        print('Trying to download the remaining files')
+        for file in missing_files:
+            # Printing the file name.
+            print(f'Missing file: {file}')
+
+            # Creating a datetime object to subtract the 12min interval.
+            date = datetime.strptime(file[24:39], '%Y%m%d_%H%M%S') - timedelta(minutes=12)
+
+            # Querying again.
+            ds = 'hmi.sharp_cea_720s['+str(harpnum)+']['+date.strftime('%Y-%m-%d')+'_'+date.strftime('%H:%M:%S')+'_TAI/'+'0.5h'+'@'+'720s'+']{Br, Bp, Bt}'
                 
-                # Querying again.
-                ds = 'hmi.sharp_cea_720s['+ str(harpnum)+\
-                     ']['+ daystamp+'_'+hourstamp+'_TAI/'+'1h'+'@'+'720s'+']{Br, Bp, Bt}'
+            # Printing ds.
+            print(f'Query string: {ds}')
+
+            # Requesting the missing data.
+            requests = client.export(ds, method = 'url', protocol = 'fits')
                 
-                # Requesting the missing data.
-                requests = client.export(ds, method = 'url', protocol = 'fits')
+            # Getting the request
+            requests.download(directory)
                 
-                # Getting the request
-                requests.download(directory)
-                
-                # Checking if the file is there. Removing it from the list if so.
-                for file in requests.data['filename']:
-                    if file not in glob.glob(directory+file):
-                        print(f'File {file} NOT downloaded.')
-                        
-                    else:
-                        # Remove the downloaded file from the missing file list.
-                        missing_files.remove(file)
-        else:
-            print(f'No missing files. Scan: {i}')
+            # Checking if the file is there.
+            if file_ not in glob.glob(directory):
+                print(f'File {file_} NOT downloaded.')
+            
+            # Deleting duplicates.
+            for file_ in glob.glob(directory+'*.fits.1'):
+                os.remove(file_)
     
     return(missing_files)
 
@@ -217,38 +126,36 @@ def downdrms(harpnum, tstart, extent, cadence, path = None):
     field vector in cilindrical components.
     '''
     
-    # checking path
+    # Checking path
     if path is None:
         # Defaulting for the hardrive connected on linux.
         out_dir = stdconfig.readconfig('linux','data')+str(harpnum)+'/'
         
-        # checking if the path exists
+        # Checking if the path exists.
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
     
-    # creating the client instance
+    # Creating the client instance.
     client = drms.Client(email = 'andrechicrala@gmail.com', verbose = True)
     
-    # filtering the series
+    # Filtering the series.
     client.series(r'hmi\.sharp_cea_720s')
     
-    # querying
+    # Querying.
     ds = 'hmi.sharp_cea_720s['+ str(harpnum) + \
     ']['+ tstart+'_TAI/' + extent + '@' + cadence +']{Br, Bp, Bt}'
     
-    # creating the request object
-    # it contains the query id and status
-    # the data can only be downloaded when status
-    # is 0
+    # creating the request object it contains the query id and status
+    # the data can only be downloaded when status is 0.
     requests = client.export(ds, method = 'url', protocol = 'fits')
     
-    # getting the request
+    # Getting the request.
     requests.download(out_dir)
     
     # Checking missing data.
-    missing_files = check_missing_files(harpnum, out_dir, requests)
+    missing_files = check_missing_files(harpnum=harpnum, directory=out_dir, requests=requests)
             
-    # printing
+    # Feedback.
     print('Downloads complete!')
     
     return(out_dir, missing_files)
