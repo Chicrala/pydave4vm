@@ -730,7 +730,7 @@ def execute_configs(os_='linux',path=None):
     path_to_move = path+'used/'
     
     # Searching for the config files paths.
-    path = glob.glob(path+'*.ini')
+    path = sorted(glob.glob(path+'*.ini'))
     
     # Iterating for each congif file.
     for config in path:
