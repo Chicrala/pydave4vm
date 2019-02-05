@@ -93,7 +93,7 @@ def check_missing_files(harpnum, directory, requests=None, tstart=None,
             requests.download(directory)
                 
             # Checking if the file is there.
-            if file_ not in glob.glob(directory):
+            if file not in glob.glob(directory):
                 print(f'File {file_} NOT downloaded.')
             
             # Deleting duplicates.
