@@ -17,7 +17,8 @@ import os
 
 def makedownloads(config_path, os_):
     '''
-    This is the a code that will
+    This is the a code that will download the data without proceeding with the
+    analysis. This way it can be run in parallel.
         
     '''
     
@@ -108,14 +109,14 @@ def makedownloads(config_path, os_):
     
     return
     
-def execute_configs(os_='linux',path=None):
+def down_configs(os_='linux', path=None):
     '''
     This code will read multiple config files and execute the 'prepare' 
     routine for each one of those files which will then make the analysis for 
     each region featured on the file.
     '''
-    # Checking if path to configs exists.
     if path is None:
+        # Checking if path to configs exists.
         path = stdconfig.readconfig(os_,'configs')
     
     # Searching for the config files paths.
@@ -135,4 +136,4 @@ if __name__ == '__main__':
     '''
     test zone
     '''
-    execute_configs('linux')
+    down_configs(os_='mac', path=)
