@@ -45,9 +45,10 @@ def minersession(dbaddress = None):
     # Testing if dbaddress existis defaulting if not.
     while dbaddress is None:
         # Possible location for my db.
-        locations = [stdconfig.readconfig('linux','arsdb'),
+        locations = ['/Users/andrechicrala/Downloads/SWPC/ARsdb.db',
+                     stdconfig.readconfig('linux','arsdb'),
                      stdconfig.readconfig('mac','arsdb'),
-                     '/Users/andrechicrala/Downloads/SWPC/ARsdb.db']
+                     ]
         
         # Checking all the possible locations.
         for item in locations:
@@ -248,6 +249,7 @@ if __name__ == '__main__':
     '''
     The classical testing zone
     '''
+    '''
     harps = [2587,3686,3688,4448,5011,5026,6223,6555,6558,6620,6846,7256]
     for hnum in harps:
         print(f'Testing {hnum}.')
@@ -257,5 +259,13 @@ if __name__ == '__main__':
             print('Getting the morphologies for: ',noaa_number, ' \n ', find_morphology(noaa_number))
             print('The max hale class for this region is: ', find_max_hale_class(noaa_number))
         print('-------------------------------------------------------------------------- \n')
+    '''
     #a = find_max_hale_class(12443,12445,None)
     #print(a)
+    import sunpy.map
+    import glob
+    path = '/Volumes/Chicrala/data/3686/*.Bp.fits'
+    for file in sorted(glob.glob(path)):
+        print(file)
+        nn = find_noaa_number(sunpy.map.Map(file).meta)
+        print(nn)

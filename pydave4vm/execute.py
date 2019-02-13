@@ -65,6 +65,7 @@ import glob
 import shutil
 import sys
 import os
+import yaml
 
 # Calling the package that will execute PyDAVE4VM.
 from pydave4vm import do_dave4vm
@@ -110,12 +111,15 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     harpnum, tstart, extent, cadence, dbaddress,\
     window_size, = myconfig.readconfig(config_path)
     
-    # Starting the log file.
-    logging.basicConfig(filename = str(harpnum)+'.log',
-                        level=logging.DEBUG)
+    # Configuring the log file.
+    with open(f'{harpnum}log.yaml', 'r') as f:
+        config = yaml.safe_load(f.read())
+        logging.config.dictConfig(config)
+    
+    logger = logging.getLogger(__name__)
     
     # Logging when the analysis started.
-    logging.info('Analysis started at: ' + str(analysis_start))
+    logger.info('Analysis started at: ' + str(analysis_start))
     
     # Checking if data is already in the disk.
     if downloaded == None:
@@ -136,16 +140,16 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                 
             # Add to the log if try is sucessfull or not.
             except RuntimeError:
-                logging.debug('The download was not complete.')
+                logger.debug('The download was not complete.')
                 print('The download was not complete.')
                 
             else:
-                logging.info('Downloads finished at: ' + str(datetime.now()))
+                logger.info('Downloads finished at: ' + str(datetime.now()))
             
             # Reporting missing files.
             if missing_files != []:
                 print(f'Missing files: {missing_files}')
-                logging.debug(f'Missing files: {missing_files}')
+                logger.debug(f'Missing files: {missing_files}')
                 
         # If it does use the files there.
         else:
@@ -161,7 +165,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             # Reporting missing files.
             if missing_files != []:
                 print(f'Missing files: {missing_files}')
-                logging.debug(f'Missing files: {missing_files}')
+                logger.debug(f'Missing files: {missing_files}')
     
     # Assigning the path to the files.       
     else:
@@ -172,7 +176,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             downloaded = str(input('Inform the path to the downloaded files enclosing folder: '))
         
         # Logging the output.
-        logging.info('The files were already saved in the disk.')
+        logger.info('The files were already saved in the disk.')
         print('The files were already saved in the disk.')
         
         # Assigning the path.
@@ -182,7 +186,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     number_of_files = len(fnmatch.filter(os.listdir(path),'*.fits'))
     
     # And taking the results to the log.
-    logging.info('There are ' + str(number_of_files) + 
+    logger.info('There are ' + str(number_of_files) + 
                 ' .fits files saved in the disk.')
     print('There are ' + str(number_of_files) + 
                 ' .fits files saved in the disk.')
@@ -195,23 +199,23 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     
     # Logging any missing files.
     if Br_unique == [] and Bt_unique == [] and Bp_unique == []:
-        logging.info('There are no missing files')
+        logger.info('There are no missing files')
         print('There are no missing files.')
         
     else:
-        logging.info('Listing the removed elements: ')
+        logger.info('Listing the removed elements: ')
         print('Listing the removed elements: ')
         # Looping over each list to tell which elements were missing.
         for item in Br_unique:
-            logging.info(f'{item}')
+            logger.info(f'{item}')
             print(f'{item}')
             
         for item in Bt_unique:
-            logging.info(f'{item}')
+            logger.info(f'{item}')
             print(f'{item}')
             
         for item in Bp_unique:
-            logging.info(f'{item}')
+            logger.info(f'{item}')
             print(f'{item}')
     
     # Deleting those lists.
@@ -269,7 +273,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         # Adding the atribute exception.
         except AttributeError:
             session.rollback()
-            logging.debug('AR not inserted into the database.')
+            logger.debug('AR not inserted into the database.')
             print('AR not inserted into the database.')
             
         else:
@@ -291,13 +295,13 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             
             # Checking if the result is an int.
             if type(ar_id) != int:
-                # Logging.
-                logging.debug('Inconsistent type for AR id.')
+                # logger.
+                logger.debug('Inconsistent type for AR id.')
                 print('Inconsistent type for AR id.')
                 print('Abort Mission!')
                 sys.exit('Exiting')
             
-            logging.info('AR ' + str(meta['harpnum']) + \
+            logger.info('AR ' + str(meta['harpnum']) + \
                          ' commited into the database. New AR id: ' + \
                          str(ar_id))
             
@@ -308,7 +312,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                 
     else:
         # Printing which is the table positioning.
-        logging.info(f'The Active Region {AR[0][1],AR[0][2]} is already in the '
+        logger.info(f'The Active Region {AR[0][1],AR[0][2]} is already in the '
               f'database with the id: {AR[0][0]}')
         
         print(f'The Active Region {AR[0][1],AR[0][2]} is already in the '
@@ -319,8 +323,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         
         # Checking if the result is an int.
         if type(ar_id) != int:
-            # Logging.
-            logging.debug('Inconsistent type for AR id.')
+            # logger.
+            logger.debug('Inconsistent type for AR id.')
             print('Inconsistent type for AR id.')
             print('Abort Mission!')
             sys.exit('Exiting')
@@ -359,15 +363,15 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             t1 = datetime.strptime(meta_cube_Bp[0]['t_rec'], "%Y.%m.%d_%H:%M:%S_TAI")
             t2 = datetime.strptime(meta_cube_Bp[1]['t_rec'], "%Y.%m.%d_%H:%M:%S_TAI")
             print('Value Error on date-obs, t_rec used instead of date-obs.')
-            logging.debug('Value Error on date-obs, t_rec used instead of date-obs.')
+            logger.debug('Value Error on date-obs, t_rec used instead of date-obs.')
             
         # Checking if the timedelta is consistent.
-        if abs((t2-t1).seconds-720) > 7:
-            print('Time delta deviated by more than 1%. \n ',
+        if abs((t2-t1).seconds-720) > 120:
+            print('Time delta deviated by more than 2 minutes. \n ',
                   f't1: {t1} \n',
                   f't2: {t2} \n',
                   f'Deltat: {(t2-t1).seconds} \n')
-            logging.debug('Time delta deviated by more than 1%. \n ',
+            logger.debug('Time delta deviated by more than 2 minutes. \n ',
                           f't1: {t1} \n',
                           f't2: {t2} \n',
                           f'Deltat: {(t2-t1).seconds} \n')
@@ -376,7 +380,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         # Checking if the shape is consistent among the observations.
         if np.shape(bx_start) != np.shape(bx_stop):
             print(f'Shape not consistent. bx_start({t1}): {np.shape(bx_start)}, bx_stop({t2}): {np.shape(bx_stop)}')
-            logging.debug(f'Shape not consistent. bx_start({t1}): {np.shape(bx_start)}, bx_stop({t2}): {np.shape(bx_stop)}')
+            logger.debug(f'Shape not consistent. bx_start({t1}): {np.shape(bx_start)}, bx_stop({t2}): {np.shape(bx_stop)}')
             # Go to the next step.
             continue
             
@@ -441,8 +445,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                     # Calculating Schrijver's R.
                     logR = np.log10(np.sum(np.absolute(np.multiply(magvm['bz'],
                                                                    pil_gb_map))))
-                # Logging.
-                logging.info('The apperture problem could be solved, data processed.')
+                # logger.
+                logger.info('The apperture problem could be solved, data processed.')
                 # Prints to state progress.
                 print('The apperture problem could be solved, data processed.')
             
@@ -456,8 +460,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                 int_PIL_St = int_PIL_pos_St = int_PIL_neg_St = None
                 int_PIL_Ss = int_PIL_pos_Ss = int_PIL_neg_Ss = None
                 
-                # Logging.
-                logging.info('The apperture problem could not be solved. ' +
+                # logger.
+                logger.info('The apperture problem could not be solved. ' +
                              f'({i}/{number_of_obs})')
                 # Prints to state progress.
                 print('The apperture problem could not be solved. ' + 
@@ -520,11 +524,11 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                 
             except AttributeError:
                 session.rollback()
-                logging.debug('Timestamp ' + str(t2) + ' not created.')
+                logger.debug('Timestamp ' + str(t2) + ' not created.')
                 print('Timestamp ' + str(t2) + ' not created.')
                 
             else:
-                logging.info('Timestamp ' + str(t2) + ' created. '  + 
+                logger.info('Timestamp ' + str(t2) + ' created. '  + 
                             f'({i}/{number_of_obs})')
                 print('Timestamp ' + str(t2) + ' created. '  + 
                      f'({i}/{number_of_obs})')
@@ -534,7 +538,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
                   f'({i}/{number_of_obs})')
             
         else:
-            logging.info('Timestamp ' + str(t2) + 
+            logger.info('Timestamp ' + str(t2) + 
                          ' was already in the database.')
             print('Timestamp ' + str(t2) + 
                   ' was already in the database.')
@@ -543,8 +547,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     # Creating a timestamp for the analysis end.
     observations_end = datetime.now()
     
-    # Logging.
-    logging.info('Observation table analysis finished at: ' + str(observations_end))
+    # logger.
+    logger.info('Observation table analysis finished at: ' + str(observations_end))
     ###########################################################################
     # Populating the Morphology and Events tables.
     ##############################################
@@ -563,7 +567,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         
         if check is True:
             print(f'Morphology {key} ALREADY inserted.')
-            logging.info(f'Morphology {key} ALREADY inserted.')
+            logger.info(f'Morphology {key} ALREADY inserted.')
             continue
         
         # Creating a new entry for the Morphology table.
@@ -587,11 +591,11 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         except ValueError:
             session.rollback()
             print(f'Morphology {key} NOT inserted.')
-            logging.info(f'Morphology {key} NOT inserted.')
+            logger.info(f'Morphology {key} NOT inserted.')
         
         else:
             print(f'Morphology {key} inserted.')
-            logging.info(f'Morphology {key} inserted.')
+            logger.info(f'Morphology {key} inserted.')
         
     # Doing the same for the Events.
     events = swpcparser.event_seeker(os_,noaa_numbers)
@@ -604,7 +608,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         
         if check is True:
             print(f'Event {key} ALREADY inserted.')
-            logging.info(f'Event {key} ALREADY inserted.')
+            logger.info(f'Event {key} ALREADY inserted.')
             continue
         
         # Creating a new entry for the Morphology table.
@@ -628,11 +632,11 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         except ValueError:
             session.rollback()
             print(f'Events {key} NOT inserted.')
-            logging.info(f'Events {key} NOT inserted.')
+            logger.info(f'Events {key} NOT inserted.')
         
         else:
             print(f'Events {key} inserted.')
-            logging.info(f'Events {key} inserted.')
+            logger.info(f'Events {key} inserted.')
             
     ###########################################################################
     # Updating the NOAA number and max hale class entries for the set.
@@ -667,11 +671,11 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     
     except ValueError:
         print('Active Region noaa numbers NOT updated.')
-        logging.debug('Active Region noaa numbers NOT updated.')
+        logger.debug('Active Region noaa numbers NOT updated.')
     
     else:
         print('Active Region noaa numbers updated.')
-        logging.info('Active Region noaa numbers updated.')
+        logger.info('Active Region noaa numbers updated.')
     
     ###########################################################################
     # Ending the execution.
@@ -679,7 +683,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     # Closing database session.
     session.close()
     print('Session closed')
-    logging.info('Session closed')
+    logger.info('Session closed')
     
     analysis_end = datetime.now()
     
@@ -689,7 +693,7 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             print(f'Active region {ar} analysis completed.')
         
         print('Total Execution time: ', str(analysis_end - analysis_start))
-        logging.info('Total Execution time: ' + str(analysis_end - analysis_start))
+        logger.info('Total Execution time: ' + str(analysis_end - analysis_start))
     
     if delete_files == True:
         # Deleting files from the system.
@@ -702,17 +706,17 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         except OSError:
             # Feedback.
             print('Could not remove files.')
-            # Logging.
-            logging.debug('Files were not removed.')
+            # logger.
+            logger.debug('Files were not removed.')
             
         else:
             # Feedback.
             print('Files deleted.')
-            # Logging.
-            logging.info('Files deleted.')
+            # logger.
+            logger.info('Files deleted.')
             
     # Shutting down the log.
-    logging.shutdown()
+    logger.shutdown()
     
     return
     
