@@ -65,7 +65,6 @@ import glob
 import shutil
 import sys
 import os
-import yaml
 
 # Calling the package that will execute PyDAVE4VM.
 from pydave4vm import do_dave4vm
@@ -112,11 +111,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     window_size, = myconfig.readconfig(config_path)
     
     # Configuring the log file.
-    with open(f'{harpnum}log.yaml', 'r') as f:
-        config = yaml.safe_load(f.read())
-        logging.config.dictConfig(config)
-    
-    logger = logging.getLogger(__name__)
+    logger = logging.basicConfig(filename = str(harpnum)+'.log',
+                                  level=logging.DEBUG)
     
     # Logging when the analysis started.
     logger.info('Analysis started at: ' + str(analysis_start))
