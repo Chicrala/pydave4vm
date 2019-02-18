@@ -111,8 +111,15 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     window_size, = myconfig.readconfig(config_path)
     
     # Configuring the log file.
-    logger = logging.getLogger(str(harpnum)+'.log')
+    logger = logging.getLogger('PyDAVE4VM')
     logger.setLevel(logging.DEBUG)
+    
+    # Creating the file handler.
+    fh = logging.FileHandler(str(harpnum)+'.log')
+    fh.setLevel(logging.INFO)
+    
+    # Binding the file handler to the logger.
+    logger.addHandler(fh)
     
     # Logging when the analysis started.
     logger.info('Analysis started at: ' + str(analysis_start))
@@ -150,19 +157,6 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         # If it does use the files there.
         else:
             path = std_path
-            
-            # Checking for missing files within the path.
-
-            #missing_files = downloaddata.check_missing_files(harpnum=harpnum, 
-            #                                                 directory=std_path,
-            #                                                 tstart=tstart,
-            #                                                 extent=extent,
-            #                                                 cadence=cadence)
-            
-            # Reporting missing files.
-            #if missing_files != []:
-                #print(f'Missing files: {missing_files}')
-                #logger.debug(f'Missing files: {missing_files}')
 
     # Assigning the path to the files.       
     else:
@@ -712,8 +706,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             # logger.
             logger.info('Files deleted.')
             
-    # Shutting down the log.
-    logger.shutdown()
+    # Removing the file handler.
+    logger.removeHandler(fh)
     
     return
     
