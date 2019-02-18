@@ -111,8 +111,8 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
     window_size, = myconfig.readconfig(config_path)
     
     # Configuring the log file.
-    logger = logging.basicConfig(filename = str(harpnum)+'.log',
-                                  level=logging.DEBUG)
+    logger = logging.getLogger(str(harpnum)+'.log')
+    logger.setLevel(logging.DEBUG)
     
     # Logging when the analysis started.
     logger.info('Analysis started at: ' + str(analysis_start))
@@ -152,17 +152,18 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
             path = std_path
             
             # Checking for missing files within the path.
-            missing_files = downloaddata.check_missing_files(harpnum=harpnum, 
-                                                             directory=std_path,
-                                                             tstart=tstart,
-                                                             extent=extent,
-                                                             cadence=cadence)
+
+            #missing_files = downloaddata.check_missing_files(harpnum=harpnum, 
+            #                                                 directory=std_path,
+            #                                                 tstart=tstart,
+            #                                                 extent=extent,
+            #                                                 cadence=cadence)
             
             # Reporting missing files.
-            if missing_files != []:
-                print(f'Missing files: {missing_files}')
-                logger.debug(f'Missing files: {missing_files}')
-    
+            #if missing_files != []:
+                #print(f'Missing files: {missing_files}')
+                #logger.debug(f'Missing files: {missing_files}')
+
     # Assigning the path to the files.       
     else:
         
