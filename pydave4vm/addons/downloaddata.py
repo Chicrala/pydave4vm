@@ -124,7 +124,7 @@ def downdrms(harpnum, tstart, extent, cadence, out_dir=None):
     print('Downloads complete!')
     
     return(out_dir, missing_files)
-
+    
 def checksegments():
     '''
     This function will print the segments
@@ -151,14 +151,5 @@ if __name__ == "__main__":
     '''
     
     # downdrms(6063, '2015-11-04T00:00:00', '2015-11-04T02:00:00')
-    downdrms(2696, '2013.04.24_00:00:00', '30d', '720s', 
-             out_dir='/Users/andrechicrala/Downloads/2696/')
-    
-    downdrms(2878, '2013.06.17_00:00:00', '30d', '720s', 
-             out_dir='/Users/andrechicrala/Downloads/2878/')
-    
-    downdrms(3647, '2014.01.16_00:00:00', '30d', '720s', 
-             out_dir='/Users/andrechicrala/Downloads/3647/')
-    
-    downdrms(4043, '2014.04.13_00:00:00', '30d', '720s', 
-             out_dir='/Users/andrechicrala/Downloads/4043/')
+    downdrms(5724, '2013.04.24_00:00:00', '30d', '720s', 
+             out_dir='/Volumes/DATABASE/data/5724/')
