@@ -46,8 +46,8 @@ def minersession(dbaddress = None):
     while dbaddress is None:
         # Possible location for my db.
         locations = ['/Users/andrechicrala/Downloads/SWPC/ARsdb.db',
-                     stdconfig.readconfig('linux','arsdb'),
-                     stdconfig.readconfig('mac','arsdb'),
+                     #stdconfig.readconfig('linux','arsdb'),
+                     #stdconfig.readconfig('mac','arsdb'),
                      ]
         
         # Checking all the possible locations.

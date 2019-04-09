@@ -13,6 +13,8 @@ import os
 import glob
 from pydave4vm.addons import stdconfig
 from datetime import datetime, timedelta
+from sunpy.net import Fido, attrs as a
+import astropy.units as a
 
 def check_missing_files(harpnum, directory, requests):
     '''
@@ -118,12 +120,12 @@ def downdrms(harpnum, tstart, extent, cadence, out_dir=None):
     requests.download(out_dir)
     
     # Checking missing data.
-    missing_files = check_missing_files(harpnum=harpnum, directory=out_dir, requests=requests)
+    #missing_files = check_missing_files(harpnum=harpnum, directory=out_dir, requests=requests)
             
     # Feedback.
     print('Downloads complete!')
     
-    return(out_dir, missing_files)
+    return(out_dir)#, missing_files)
     
 def checksegments():
     '''
@@ -144,6 +146,49 @@ def checksegments():
     
     return
 
+###############################################################################
+# Code to check the files that were already downloaded.
+def flagship(path, download=False):
+    '''
+    This function will check the downloaded files and flag where a time
+    interval is larger than 12 min and download the files if requested.
+    '''
+    
+    # Getting the HARP number.
+    harpnum = path[-4:]
+    
+    # Listing the files.
+    files = [file[len(path)+1:] for file in glob.glob(path+'/*Br.fits')]
+    
+    # Making the timestamps.
+    stamps = [datetime.strptime(file[24:39], '%Y%m%d_%H%M%S') for file in files]
+    
+    # Creating a results storage.
+    flags = []
+    
+    # Checking the time differences between the files.
+    for i in range(1,len(stamps)):
+        # Flagging the differences if it is larger than 13 minutes. It will 
+        # print and append the End/Start time, the gap between then and how 
+        # many files should be between them.
+        if stamps[i]-stamps[i-1] > timedelta(minutes=12):
+            print(stamps[i], stamps[i-1], stamps[i]-stamps[i-1], 
+                  (stamps[i]-stamps[i-1])/timedelta(minutes=12))
+            flags.append([stamps[i].strftime("%Y.%m.%d_%H:%M:%S"), 
+                          stamps[i-1].strftime("%Y.%m.%d_%H:%M:%S"), 
+                          stamps[i]-stamps[i-1],
+                          (stamps[i]-stamps[i-1])/timedelta(minutes=12)])
+    
+    # Downloading files if requested.
+    if download is True:
+        for entry in flags:
+            downdrms(harpnum=harpnum, tstart=entry[1], 
+                     extent=str(entry[2].seconds/3600)+'h', cadence='720s',
+                     out_dir='/Users/andrechicrala/Downloads/test/downtest/')
+            #break
+
+    return(flags)
+
 
 if __name__ == "__main__":
     '''
@@ -151,5 +196,8 @@ if __name__ == "__main__":
     '''
     
     # downdrms(6063, '2015-11-04T00:00:00', '2015-11-04T02:00:00')
-    downdrms(5724, '2013.04.24_00:00:00', '30d', '720s', 
-             out_dir='/Volumes/DATABASE/data/5724/')
+    #downdrms(5724, '2013.04.24_00:00:00', '30d', '720s', 
+    #         out_dir='/Volumes/DATABASE/data/5724/')
+    
+    path = '/Volumes/chicrala/data/6063'
+    sheep = flagship(path, download=True)
