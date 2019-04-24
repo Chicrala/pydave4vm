@@ -46,10 +46,11 @@ def makedownloads(config_path, os_):
     
         # Downloading data and returning the path.
         try:
-            path, missing_files = downloaddata.downdrms(harpnum=harpnum,
-                                                        tstart=tstart,
-                                                        extent=extent,
-                                                        cadence=cadence)
+            path = downloaddata.downdrms(harpnum=harpnum,
+                                         tstart=tstart,
+                                         extent=extent,
+                                         cadence=cadence,
+                                         out_dir=f'/Volumes/chicrala/data/{harpnum}/')
             
         # Add to the log if try is sucessfull or not.
         except RuntimeError:
@@ -58,12 +59,6 @@ def makedownloads(config_path, os_):
             
         else:
             logging.info('Downloads finished at: ' + str(datetime.now()))
-        
-        # Reporting missing files.
-        if missing_files != []:
-            print(f'Missing files: {missing_files}')
-            logging.debug(f'Missing files: {missing_files}')
-    
         
     # Checking how many files are inside the directory.
     number_of_files = len(fnmatch.filter(os.listdir(path),'*.fits'))
@@ -120,7 +115,7 @@ def down_configs(os_='linux', path=None):
         path = stdconfig.readconfig(os_,'configs')
     
     # Searching for the config files paths.
-    path = glob.glob(path+'*.ini')
+    path = sorted(glob.glob(path+'*.ini'))
     
     # Iterating for each congif file.
     for config in path:
@@ -136,4 +131,4 @@ if __name__ == '__main__':
     '''
     test zone
     '''
-    down_configs(os_='mac', path=)
+    down_configs(os_='mac', path='/Users/andrechicrala/Downloads/configs/')

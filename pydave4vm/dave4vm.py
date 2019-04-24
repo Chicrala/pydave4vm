@@ -97,19 +97,19 @@ def calculate_dave4vm(magvm,wsize):
     if index[0].size != 0: 
         
         for i,j in zip(index[0],index[1]):
-            #taking a chunk of AM at the specified point
-            #AA = AM[:,:,index[0][i],index[1][i]]
+            # Taking a chunk of AM at the specified point
             AA = AM[:,:,i,j]
             
-            #taking the first 9 columns to build ''ax''
+            # Taking the first 9 columns to build ''ax''.
             GA = AA[0:9,0:9]
             
-            #taking the last column to build ''b''
+            # Taking the last column to build ''b''.
             FA = -1*np.reshape(AA[9,0:9],9)
             
-            #defining a vector to receive the answers
+            # Defining a vector to receive the answers.
             vector = solve(GA,FA)
-            #assigning the values to the matrices
+            
+            # Assigning the values to the matrices.
             U0[i,j] = vector[0]
             V0[i,j] = vector[1]
             UX[i,j] = vector[2]
@@ -120,16 +120,15 @@ def calculate_dave4vm(magvm,wsize):
             WX[i,j] = vector[7]
             WY[i,j] = vector[8]
             
-            #Organizing the variables in a dictionary
-            #solved refers to the apperture problem being solved
-            vel4vm = {'U0': U0, 'UX': UX, 'UY': UY,
-                      'V0': V0, 'VX': VX, 'VY': VY,
-                      'W0': W0, 'WX': WX, 'WY': WY,
-                      'solved': True}
+        #Organizing the variables in a dictionary.
+        # Solved refers to the apperture problem being solved.
+        vel4vm = {'U0': U0, 'UX': UX, 'UY': UY,
+                  'V0': V0, 'VX': VX, 'VY': VY,
+                  'W0': W0, 'WX': WX, 'WY': WY,
+                  'solved': True}
             
     if index[0].size == 0:
-        #if the equation can not be solved
-        #return None for each variable
+        # If the equation can not be solved return None for each variable.
         vel4vm = {'U0': None, 'UX': None, 'UY': None,
                   'V0': None, 'VX': None, 'VY': None,
                   'W0': None, 'WX': None, 'WY': None,
