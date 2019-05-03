@@ -407,6 +407,32 @@ def prepare(config_path, os_, downloaded=None):
                 
                 columnshape = np.shape(vel4vm['U0'])[0]
                 
+                # Exporting the images.
+
+                try:
+                	# Velocity components.
+                	np.savetxt(imgs_path['U0']+t2.strftime('%Y%m%d%H%M%S')+'.txt',vel4vm['U0'],delimiter=',')
+                	np.savetxt(imgs_path['V0']+t2.strftime('%Y%m%d%H%M%S')+'.txt',vel4vm['V0'],delimiter=',')
+                	np.savetxt(imgs_path['W0']+t2.strftime('%Y%m%d%H%M%S')+'.txt',vel4vm['W0'],delimiter=',')
+    
+                	# Average of the magnetic field components.
+                	np.savetxt(imgs_path['Bx']+t2.strftime('%Y%m%d%H%M%S')+'.txt',magvm['bx'],delimiter=',')
+                	np.savetxt(imgs_path['By']+t2.strftime('%Y%m%d%H%M%S')+'.txt',magvm['by'],delimiter=',')
+                	np.savetxt(imgs_path['Bz']+t2.strftime('%Y%m%d%H%M%S')+'.txt',magvm['bz'],delimiter=',')
+                	
+                	# Poynting flux components.
+                	np.savetxt(imgs_path['Sn']+t2.strftime('%Y%m%d%H%M%S')+'.txt',Sn,delimiter=',')
+                	np.savetxt(imgs_path['St']+t2.strftime('%Y%m%d%H%M%S')+'.txt',St,delimiter=',')
+                	np.savetxt(imgs_path['Ss']+t2.strftime('%Y%m%d%H%M%S')+'.txt',Ss,delimiter=',')
+    
+                except TypeError:
+                    logger.debug('Images from ' + str(t2) + ' not exported.')
+                    print('Images from ' + str(t2) + ' not exported.')
+    
+                else:
+                    logger.debug('Images from ' + str(t2) + ' exported.')
+                    print('Images from ' + str(t2) + ' exported.')
+                
                 ###############################################################
                 # Integration around the PILS.
                 ##############################
@@ -477,32 +503,6 @@ def prepare(config_path, os_, downloaded=None):
             ###################################################################
             # Data insertion.
             #################
-            # Exporting the images.
-
-            try:
-            	# Velocity components.
-            	np.savetxt(imgs_path['U0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['U0'],delimiter=',')
-            	np.savetxt(imgs_path['V0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['V0'],delimiter=',')
-            	np.savetxt(imgs_path['W0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['W0'],delimiter=',')
-
-            	# Average of the magnetic field components.
-            	np.savetxt(imgs_path['Bx']+t2.strftime('%Y%m%d%H%M%S'),magvm['bx'],delimiter=',')
-            	np.savetxt(imgs_path['By']+t2.strftime('%Y%m%d%H%M%S'),magvm['by'],delimiter=',')
-            	np.savetxt(imgs_path['Bz']+t2.strftime('%Y%m%d%H%M%S'),magvm['bz'],delimiter=',')
-            	
-            	# Poynting flux components.
-            	np.savetxt(imgs_path['Sn']+t2.strftime('%Y%m%d%H%M%S'),Sn,delimiter=',')
-            	np.savetxt(imgs_path['St']+t2.strftime('%Y%m%d%H%M%S'),St,delimiter=',')
-            	np.savetxt(imgs_path['Ss']+t2.strftime('%Y%m%d%H%M%S'),Ss,delimiter=',')
-
-            except TypeError:
-                logger.debug('Images from ' + str(t2) + ' not exported.')
-                print('Images from ' + str(t2) + ' not exported.')
-
-            else:
-                logger.debug('Images from ' + str(t2) + ' exported.')
-                print('Images from ' + str(t2) + ' exported.')
-
             # Here the actual data is led into the database by adding a new 
             # observation to it.
             try:
