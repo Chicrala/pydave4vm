@@ -468,83 +468,74 @@ def prepare(config_path, os_, downloaded=None):
                 # Prints to state progress.
                 print('The apperture problem could be solved, data processed.')
             
-            else:
-                ###############################################################
-                # Poynting flux calculation.
-                ############################
-                # Defaulting the Poynting flux and columnshape.
-                Sn = St = Ss = int_Sn = int_St = int_Ss = columnshape = logR = None
-                int_PIL_Sn = int_PIL_pos_Sn = int_PIL_neg_Sn = None
-                int_PIL_St = int_PIL_pos_St = int_PIL_neg_St = None
-                int_PIL_Ss = int_PIL_pos_Ss = int_PIL_neg_Ss = None
+                ###################################################################
+                # Finding the NOAA numbers of these observations.
+                #################################################
+                # Calling the function that does it and placing the NOAA numbers
+                # in numerical order.
+                noaa_number = sorted(swpc_db.find_noaa_number(meta_cube_Bp[1]))
                 
+                # Appending the NOAA numbers to the overall list.
+                for thing in noaa_number:
+                    if thing not in noaa_numbers:
+                        noaa_numbers.append(thing)
+                
+                # Filling all the available slots.
+                while len(noaa_number) < 3:
+                    noaa_number.append(None)
+                
+                ###################################################################
+                # Data insertion.
+                #################
+                # Here the actual data is led into the database by adding a new 
+                # observation to it.
+                try:
+                    new_obs = Observations(timestamp_dt=t2,
+                                           timestamp_int=int(t2.strftime('%Y%m%d%H%M%S')),
+                                           deltat=dt,
+                                           ar_id=ar_id,
+                                           int_Sn=int_Sn,
+                                           int_St=int_St,
+                                           int_Ss=int_Ss,
+                                           int_PIL_Sn=int_PIL_Sn,
+                                           int_PIL_pos_Sn=int_PIL_pos_Sn,
+                                           int_PIL_neg_Sn=int_PIL_neg_Sn,
+                                           int_PIL_St=int_PIL_St,
+                                           int_PIL_pos_St=int_PIL_pos_St,
+                                           int_PIL_neg_St=int_PIL_neg_St,
+                                           int_PIL_Ss=int_PIL_Ss,
+                                           int_PIL_pos_Ss=int_PIL_pos_Ss,
+                                           int_PIL_neg_Ss=int_PIL_neg_Ss,
+                                           logR=logR,
+                                           hmi_meta_data=meta_cube_Bp[1],
+                                           noaa_number1=noaa_number[0],
+                                           noaa_number2=noaa_number[1],
+                                           noaa_number3=noaa_number[2])
+                    
+                    session.add(new_obs)
+                    session.commit()
+                    
+                except AttributeError:
+                    session.rollback()
+                    logger.debug('Timestamp ' + str(t2) + ' not created.')
+                    print('Timestamp ' + str(t2) + ' not created.')
+                    
+                else:
+                    logger.info('Timestamp ' + str(t2) + ' created. '  + 
+                                f'({i}/{number_of_obs})')
+                    print('Timestamp ' + str(t2) + ' created. '  + 
+                         f'({i}/{number_of_obs})')
+                    
+                # Feedback.
+                print(meta_cube_Bp[0]['t_obs'], ' Processed! ' + 
+                      f'({i}/{number_of_obs})')
+            else:
                 # logger.
                 logger.info('The apperture problem could not be solved. ' +
                              f'({i}/{number_of_obs})')
                 # Prints to state progress.
                 print('The apperture problem could not be solved. ' + 
                       f'({i}/{number_of_obs})')
-            ###################################################################
-            # Finding the NOAA numbers of these observations.
-            #################################################
-            # Calling the function that does it and placing the NOAA numbers
-            # in numerical order.
-            noaa_number = sorted(swpc_db.find_noaa_number(meta_cube_Bp[1]))
-            
-            # Appending the NOAA numbers to the overall list.
-            for thing in noaa_number:
-                if thing not in noaa_numbers:
-                    noaa_numbers.append(thing)
-            
-            # Filling all the available slots.
-            while len(noaa_number) < 3:
-                noaa_number.append(None)
-            
-            ###################################################################
-            # Data insertion.
-            #################
-            # Here the actual data is led into the database by adding a new 
-            # observation to it.
-            try:
-                new_obs = Observations(timestamp_dt=t2,
-                                       timestamp_int=int(t2.strftime('%Y%m%d%H%M%S')),
-                                       deltat=dt,
-                                       ar_id=ar_id,
-                                       int_Sn=int_Sn,
-                                       int_St=int_St,
-                                       int_Ss=int_Ss,
-                                       int_PIL_Sn=int_PIL_Sn,
-                                       int_PIL_pos_Sn=int_PIL_pos_Sn,
-                                       int_PIL_neg_Sn=int_PIL_neg_Sn,
-                                       int_PIL_St=int_PIL_St,
-                                       int_PIL_pos_St=int_PIL_pos_St,
-                                       int_PIL_neg_St=int_PIL_neg_St,
-                                       int_PIL_Ss=int_PIL_Ss,
-                                       int_PIL_pos_Ss=int_PIL_pos_Ss,
-                                       int_PIL_neg_Ss=int_PIL_neg_Ss,
-                                       logR=logR,
-                                       hmi_meta_data=json.dumps(meta_cube_Bp[1]),
-                                       noaa_number1=noaa_number[0],
-                                       noaa_number2=noaa_number[1],
-                                       noaa_number3=noaa_number[2])
-                
-                session.add(new_obs)
-                session.commit()
-                
-            except AttributeError:
-                session.rollback()
-                logger.debug('Timestamp ' + str(t2) + ' not created.')
-                print('Timestamp ' + str(t2) + ' not created.')
-                
-            else:
-                logger.info('Timestamp ' + str(t2) + ' created. '  + 
-                            f'({i}/{number_of_obs})')
-                print('Timestamp ' + str(t2) + ' created. '  + 
-                     f'({i}/{number_of_obs})')
-                
-            # Feedback.
-            print(meta_cube_Bp[0]['t_obs'], ' Processed! ' + 
-                  f'({i}/{number_of_obs})')
             
         else:
             logger.info('Timestamp ' + str(t2) + 
