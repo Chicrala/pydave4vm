@@ -22,15 +22,13 @@ def calculate_dave4vm(magvm,wsize):
     returning the dictionary with the values.
     '''
     
-    #Copying the dictionary to a variable    
+    # Copying the dictionary to a variable    
     mag_dic = copy.copy(magvm)
     
-    #Defining arrays
-    #Taking the shape of bz to later create arrays with the same shape.
+    #Defining arrays taking the shape of bz to later create arrays with the same shape.
     sz = mag_dic['bz'].shape
     
-    #creating lists to receive the data
-    #creating "dummy" variables
+    # Creating lists to receive the data.
     U0 = np.zeros((sz[0],sz[1]))
     V0 = np.zeros((sz[0],sz[1]))
     UX = np.zeros((sz[0],sz[1]))
@@ -41,36 +39,32 @@ def calculate_dave4vm(magvm,wsize):
     WX = np.zeros((sz[0],sz[1]))
     WY = np.zeros((sz[0],sz[1]))
         
-    #Constructing the weighting functions.
+    # Constructing the weighting functions.
     nw = int(2*int(wsize/2)+1)
         
-    #Creating a numpy array based on the windowsize
-    nw2 = np.subtract(np.array(range(0,nw)),10) #check if nw should have an index associated to it
+    # Creating a numpy array based on the windowsize.
+    nw2 = np.subtract(np.array(range(0,nw)),10)
         
-    #Creating the weighting functions
+    # Creating the weighting functions.
     x = np.array([nw2,]*nw)*mag_dic['dx']
     y = np.matrix.transpose(np.array([nw2,]*nw))*mag_dic['dy']
         
-    #Creating another array
-    #Use double or float? initially I went with double
+    # Creating the kernel.
     psf = np.full((nw,nw), 1, dtype = 'float64')
     
-    #Normalizing this array
-    psf = np.divide(psf, np.sum(psf)) 
-    
-    #Making futher operations
+    psf = np.divide(psf, np.sum(psf))
     psfx = -np.multiply(psf,x)
     psfy = -np.multiply(psf,y)
     psfxx = np.multiply(psf,np.multiply(x,x))
     psfyy = np.multiply(psf,np.multiply(y,y))
     psfxy = np.multiply(np.multiply(psf,x),y)
     
-    #defining the kernel as a dictionary
+    # Defining the kernel as a dictionary.
     kernel = {'psf': psf, 'psfx': psfx, 
               'psfy': psfy, 'psfxx': psfxx,
               'psfyy': psfyy, 'psfxy': psfxy}
     
-    #Calling the next function!
+    # Calling the function that computes the matrix that spams the results.
     AM = dave4vm_matrix.the_matrix(mag_dic['bx'], mag_dic['bxx'], 
                                    mag_dic['bxy'], mag_dic['by'], 
                                    mag_dic['byx'], mag_dic['byy'],
@@ -80,13 +74,13 @@ def calculate_dave4vm(magvm,wsize):
                                    kernel['psfy'], kernel['psfxx'], 
                                    kernel['psfyy'], kernel['psfxy'])
     
-    #reshaping the matrix
+    # Reshaping the matrix.
     AM = np.reshape(AM,(10,10,sz[0],sz[1]))
 
-    #computing the trace with numpy
+    # Computing the trace with numpy.
     trc = np.trace(AM, axis1 = 0, axis2 = 1)
     
-    #indexing points where the trace is bigger than 1
+    # Indexing points where the trace is bigger than 1.
     try:
         index = np.where(trc > 1)
         
@@ -120,7 +114,7 @@ def calculate_dave4vm(magvm,wsize):
             WX[i,j] = vector[7]
             WY[i,j] = vector[8]
             
-        #Organizing the variables in a dictionary.
+        # Organizing the variables in a dictionary.
         # Solved refers to the apperture problem being solved.
         vel4vm = {'U0': U0, 'UX': UX, 'UY': UY,
                   'V0': V0, 'VX': VX, 'VY': VY,
