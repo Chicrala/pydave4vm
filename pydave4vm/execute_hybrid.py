@@ -80,19 +80,10 @@ from pydave4vm.addons.poyntingflux import poyntingflux
 import sqlalchemy as sql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from pydave4vm.addons.maindb import ActiveRegion, Observations, Events, Morphology
-
-def ajuste(data):
-    '''
-    Quick function to pass data in a numpy array 
-    to string format. Somehow it wasn't working
-    inside the main code.
-    '''
-    
-    return(data.tostring())
+from pydave4vm.addons.lightdb import ActiveRegion, Observations, Events, Morphology
 
 
-def prepare(config_path, os_, downloaded = None, delete_files = None):
+def prepare(config_path, os_, downloaded=None):
     '''
     This is the pre-routine to execute pydave4vm.
     Here the following steps are taken:
@@ -490,26 +481,26 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
 
             try:
             	# Velocity components.
-            	np.savetxt(imgs_path['U0'],vel4vm['U0'],delimiter=',')
-            	np.savetxt(imgs_path['V0'],vel4vm['V0'],delimiter=',')
-            	np.savetxt(imgs_path['W0'],vel4vm['W0'],delimiter=',')
+            	np.savetxt(imgs_path['U0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['U0'],delimiter=',')
+            	np.savetxt(imgs_path['V0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['V0'],delimiter=',')
+            	np.savetxt(imgs_path['W0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['W0'],delimiter=',')
 
             	# Average of the magnetic field components.
-            	np.savetxt(imgs_path['Bx'],magvm['bx'],delimiter=',')
-            	np.savetxt(imgs_path['By'],magvm['by'],delimiter=',')
-            	np.savetxt(imgs_path['Bz'],magvm['bz'],delimiter=',')
+            	np.savetxt(imgs_path['Bx']+t2.strftime('%Y%m%d%H%M%S'),magvm['bx'],delimiter=',')
+            	np.savetxt(imgs_path['By']+t2.strftime('%Y%m%d%H%M%S'),magvm['by'],delimiter=',')
+            	np.savetxt(imgs_path['Bz']+t2.strftime('%Y%m%d%H%M%S'),magvm['bz'],delimiter=',')
             	
             	# Poynting flux components.
-            	np.savetxt(imgs_path['Sn'],Sn,delimiter=',')
-            	np.savetxt(imgs_path['St'],St,delimiter=',')
-            	np.savetxt(imgs_path['Ss'],Ss,delimiter=',')
+            	np.savetxt(imgs_path['Sn']+t2.strftime('%Y%m%d%H%M%S'),Sn,delimiter=',')
+            	np.savetxt(imgs_path['St']+t2.strftime('%Y%m%d%H%M%S'),St,delimiter=',')
+            	np.savetxt(imgs_path['Ss']+t2.strftime('%Y%m%d%H%M%S'),Ss,delimiter=',')
 
             except TypeError:
-            	logger.debug('Images from ' + str(t2) + ' not exported.')
+                logger.debug('Images from ' + str(t2) + ' not exported.')
                 print('Images from ' + str(t2) + ' not exported.')
 
             else:
-            	logger.debug('Images from ' + str(t2) + ' exported.')
+                logger.debug('Images from ' + str(t2) + ' exported.')
                 print('Images from ' + str(t2) + ' exported.')
 
             # Here the actual data is led into the database by adding a new 
@@ -712,26 +703,6 @@ def prepare(config_path, os_, downloaded = None, delete_files = None):
         
         print('Total Execution time: ', str(analysis_end - analysis_start))
         logger.info('Total Execution time: ' + str(analysis_end - analysis_start))
-    
-    if delete_files == True:
-        # Deleting files from the system.
-        print('Deleting fits files...')
-        
-        try:
-            # Deleting the folder with the fits files.
-            shutil.rmtree(path)
-            
-        except OSError:
-            # Feedback.
-            print('Could not remove files.')
-            # logger.
-            logger.debug('Files were not removed.')
-            
-        else:
-            # Feedback.
-            print('Files deleted.')
-            # logger.
-            logger.info('Files deleted.')
             
     # Removing the file handler.
     logger.removeHandler(fh)
