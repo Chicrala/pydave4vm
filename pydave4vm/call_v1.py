@@ -20,7 +20,8 @@ from datetime import datetime
 
 #calling my set of packages
 from pydave4vm import cubitos
-from pydave4vm import do_dave4vm_and
+from pydave4vm import do_dave4vm
+from pydave4vm.addons.poyntingflux import poyntingflux
 
 
 def call_v1(path = None, window_size = None):
@@ -73,11 +74,20 @@ def call_v1(path = None, window_size = None):
     dt = (t2-t1).total_seconds()
     
     #Calling do_dave4vm_and 
-    magvm, vel4vm = do_dave4vm_and.do_dave4vm(dt,bx_stop,bx_start,by_stop,
+    magvm, vel4vm = do_dave4vm.do_dave4vm(dt,bx_stop,bx_start,by_stop,
                                               by_start,bz_stop,bz_start,dx,
                                               dy, window_size)
+
+    #calculating the Poynting flux        
+    En, Et, Es, int_En, int_Et, int_Es = poyntingflux(dx,
+                                                      magvm['bx'],
+                                                      magvm['by'],
+                                                      magvm['bz'],
+                                                      vel4vm['U0'],
+                                                      vel4vm['V0'],
+                                                      vel4vm['W0'])
     
-    return(magvm, vel4vm)
+    return(En,Es,Et,magvm,vel4vm)
 
 
 if __name__ == "__main__":

@@ -22,9 +22,9 @@ def test_import():
 def create_cube(path_Br, path_Bp, path_Bt):
     
     #Defining the paths for files
-    cube_Br = sunpy.map.Map(path_Br, cube = True)
-    cube_Bp = sunpy.map.Map(path_Bp, cube = True)
-    cube_Bt = sunpy.map.Map(path_Bt, cube = True)
+    cube_Br = sunpy.map.Map(path_Br, sequence = True)
+    cube_Bp = sunpy.map.Map(path_Bp, sequence = True)
+    cube_Bt = sunpy.map.Map(path_Bt, sequence = True)
     
     #Creating empty lists to receive the datacubes data and metadata
     data_cube_Br = []
