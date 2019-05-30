@@ -411,19 +411,19 @@ def prepare(config_path, os_, downloaded=None):
 
                 try:
                 	# Velocity components.
-                	np.save(imgs_path['U0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['U0'],delimiter=',')
-                	np.save(imgs_path['V0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['V0'],delimiter=',')
-                	np.save(imgs_path['W0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['W0'],delimiter=',')
+                	np.save(imgs_path['U0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['U0'])
+                	np.save(imgs_path['V0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['V0'])
+                	np.save(imgs_path['W0']+t2.strftime('%Y%m%d%H%M%S'),vel4vm['W0'])
     
                 	# Average of the magnetic field components.
-                	np.save(imgs_path['Bx']+t2.strftime('%Y%m%d%H%M%S'),magvm['bx'],delimiter=',')
-                	np.save(imgs_path['By']+t2.strftime('%Y%m%d%H%M%S'),magvm['by'],delimiter=',')
-                	np.save(imgs_path['Bz']+t2.strftime('%Y%m%d%H%M%S'),magvm['bz'],delimiter=',')
+                	np.save(imgs_path['Bx']+t2.strftime('%Y%m%d%H%M%S'),magvm['bx'])
+                	np.save(imgs_path['By']+t2.strftime('%Y%m%d%H%M%S'),magvm['by'])
+                	np.save(imgs_path['Bz']+t2.strftime('%Y%m%d%H%M%S'),magvm['bz'])
                 	
                 	# Poynting flux components.
-                	np.save(imgs_path['Sn']+t2.strftime('%Y%m%d%H%M%S'),Sn,delimiter=',')
-                	np.save(imgs_path['St']+t2.strftime('%Y%m%d%H%M%S'),St,delimiter=',')
-                	np.save(imgs_path['Ss']+t2.strftime('%Y%m%d%H%M%S'),Ss,delimiter=',')
+                	np.save(imgs_path['Sn']+t2.strftime('%Y%m%d%H%M%S'),Sn)
+                	np.save(imgs_path['St']+t2.strftime('%Y%m%d%H%M%S'),St)
+                	np.save(imgs_path['Ss']+t2.strftime('%Y%m%d%H%M%S'),Ss)
     
                 except TypeError:
                     logger.debug('Images from ' + str(t2) + ' not exported.')
