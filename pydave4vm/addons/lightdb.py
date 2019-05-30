@@ -1,4 +1,4 @@
-s#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 This code creates the database to hold the information about the Poynting flux 
