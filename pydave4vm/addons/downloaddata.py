@@ -13,8 +13,7 @@ import os
 import glob
 from pydave4vm.addons import stdconfig
 from datetime import datetime, timedelta
-from sunpy.net import Fido, attrs as a
-import astropy.units as a
+
 
 def check_missing_files(harpnum, directory, requests):
     '''
@@ -111,7 +110,7 @@ def downdrms(harpnum, tstart, extent, cadence, out_dir=None):
     client.series(r'hmi\.sharp_cea_720s')
     
     # Querying.
-    ds = 'hmi.sharp_cea_720s['+ str(harpnum) + ']['+ tstart+'_TAI/' + extent + '@' + cadence +']{Br, Bp, Bt}'
+    ds = 'hmi.sharp_cea_720s['+ str(harpnum) + ']['+ tstart+'_TAI/' + extent + '@' + cadence +']{Br, Bp, Bt, bitmap}'
     
     # Creating the request object it contains the query id and status.
     requests = client.export(ds, method = 'url', protocol = 'fits')
@@ -126,6 +125,48 @@ def downdrms(harpnum, tstart, extent, cadence, out_dir=None):
     print('Downloads complete!')
     
     return(out_dir)#, missing_files)
+    
+def downbitmaps(harpnum, out_dir):
+    '''
+    Unlike the previous function, this one uses the drms module:
+        
+    https://drms.readthedocs.io/en/stable/intro.html
+    
+    This function takes the harp number assigned to an AR and the initial and
+    final time desired to fetch the data from a 'hmi.sharp_cea_720s' data 
+    series.
+    
+    The format for tstart is: '2014-01-01T00:00:00' or '2016.05.18_00:00:00'.
+    
+    The Harp number will be converted to a string within the code.
+    It will then download the magnetic field vector in cilindrical components.
+    '''
+    # Getting the timestamp from the filename.
+    timestamp = sorted(glob.glob(out_dir+'*Br.fits'))[0].replace(out_dir+f'hmi.sharp_cea_720s.{harpnum}.','').replace('_TAI.Br.fits','')
+    
+    # Checking for the start time and subtracting a day from it.
+    tstart = datetime.strptime(timestamp, '%Y%m%d_%H%M%S') - timedelta(days=1)
+    tstart = tstart.strftime('%Y.%m.%d_%H:%M:%S')
+    
+    # Creating the client instance.
+    client = drms.Client(email = 'andrechicrala@gmail.com', verbose = True)
+    
+    # Filtering the series.
+    client.series(r'hmi\.sharp_cea_720s')
+    
+    # Querying.
+    ds = 'hmi.sharp_cea_720s['+str(harpnum)+']['+tstart+'_TAI/20d@720s]{bitmap}'
+    
+    # Creating the request object it contains the query id and status.
+    requests = client.export(ds, method = 'url', protocol = 'fits')
+    
+    # Getting the request.
+    requests.download(out_dir)
+            
+    # Feedback.
+    print(f'{harpnum} download complete!')
+    
+    return(out_dir)
     
 def checksegments():
     '''
@@ -199,5 +240,15 @@ if __name__ == "__main__":
     #downdrms(5724, '2013.04.24_00:00:00', '30d', '720s', 
     #         out_dir='/Volumes/DATABASE/data/5724/')
     
-    path = '/Volumes/chicrala/data/6063'
-    sheep = flagship(path, download=True)
+    #path = '/Volumes/chicrala/data/6063'
+    #sheep = flagship(path, download=True)
+    out_dirs = sorted(glob.glob('/Volumes/chicrala/data/*'))
+    for out_dir in out_dirs:
+        
+        if '2040' in out_dir[-8:]:
+            print('already there')
+            continue
+        
+        harpnum = out_dir[-4:]
+        downbitmaps(harpnum=harpnum, out_dir=out_dir+'/')
+        
