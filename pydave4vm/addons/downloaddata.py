@@ -243,12 +243,34 @@ if __name__ == "__main__":
     #path = '/Volumes/chicrala/data/6063'
     #sheep = flagship(path, download=True)
     out_dirs = sorted(glob.glob('/Volumes/chicrala/data/*'))
+    '''
     for out_dir in out_dirs:
         
-        if '2040' in out_dir[-8:]:
-            print('already there')
+        downloaded = ['2040','2107','2117','2166','2186','2203',
+                      '2240','2341','2342','2358','2522','2585',
+                      '2587','2597','6063','5011','6846','6558',
+                      '6223','3026','2696','2878','2887','3686',
+                      '3688','4448']
+        
+        if out_dir[-4:] in downloaded:
+            print(f'{out_dir[-4:]} already there.')
             continue
         
+        harpnum = out_dir[-4:]
+        downbitmaps(harpnum=harpnum, out_dir=out_dir+'/')
+    
+    '''
+    
+    for out_dir in out_dirs:
+        
+        need = ['6846','6558','6223','3026','2696',
+                '2878','2887','3686','3688','4448']
+        
+        if out_dir[-4:] not in need:
+            print(f'{out_dir[-4:]} not needed now.')
+            continue
+        
+        print(f'{out_dir[-4:]} needed now, downloading.')
         harpnum = out_dir[-4:]
         downbitmaps(harpnum=harpnum, out_dir=out_dir+'/')
         
