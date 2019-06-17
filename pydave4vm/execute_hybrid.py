@@ -463,6 +463,14 @@ def prepare(config_path, os_, downloaded=None):
                     # Calculating Schrijver's R.
                     logR = np.log10(np.sum(np.absolute(np.multiply(magvm['bz'],
                                                                    pil_gb_map))))
+                    
+                else:
+                    logger.info('This region does not have a neutral line.')
+                    int_PIL_Sn = int_PIL_pos_Sn = int_PIL_neg_Sn = 0
+                    int_PIL_St = int_PIL_pos_St = int_PIL_neg_St = 0
+                    int_PIL_Ss = int_PIL_pos_Ss = int_PIL_neg_Ss = 0
+                    logR = 0
+                    
                 # logger.
                 logger.info('The apperture problem could be solved, data processed.')
                 # Prints to state progress.
