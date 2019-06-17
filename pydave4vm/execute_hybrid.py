@@ -144,9 +144,9 @@ def prepare(config_path, os_, downloaded=None):
                 logger.info('Downloads finished at: ' + str(datetime.now()))
             
             # Reporting missing files.
-            if missing_files != []:
-                print(f'Missing files: {missing_files}')
-                logger.debug(f'Missing files: {missing_files}')
+            #if missing_files != []:
+            #    print(f'Missing files: {missing_files}')
+            #    logger.debug(f'Missing files: {missing_files}')
                 
         # If it does use the files there.
         else:
