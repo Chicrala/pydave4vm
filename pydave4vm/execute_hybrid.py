@@ -741,4 +741,5 @@ if __name__ == '__main__':
     '''
     test zone
     '''
-    execute_configs('linux')
+    #execute_configs('linux')
+    execute_configs('mac',path='/Users/andrechicrala/Downloads/configs/')

@@ -60,6 +60,42 @@ def poyntingflux(dx, Bx, By, Bz, Vx, Vy, Vz):
     
     return(Sn, St, Ss, int_Sn, int_St, int_Ss)
 
+def poyntingflux_cgs(Bx: np.array, By: np.array, Bz: np.array, 
+                     Vx: np.array, Vy: np.array, Vz: np.array):
+    '''
+    This version is also faster.
+    In this function the following steps are taken:
+        - Surrender to the CGS system;
+        - calculate the normal energy flux;
+        - calculate the tangential energy flux;
+        - calculate the sum of both normal and tangential contributions;
+        - calculate the integral of all three quantities calculated above.
+    '''
+    # Adjust velocity from km/s to cm/s.
+    adj_V = 1e5
+    
+    # Adjusting to SI.
+    Vx = Vx*adj_V
+    Vy = Vy*adj_V
+    Vz = Vz*adj_V
+    
+    # Calculating the normal energy flux.
+    Sn = ((Bx*Bx + By*By)*Vz)/(4*np.pi)
+    
+    # Calculating the tangential energy flux.
+    # The -1 multiplication is due to the orientation of By and Bp.
+    St = -1.*((Vx*Bx + Vy*By)*Bz)/(4*np.pi)
+    
+    # Summing the contributions from normal and tangenrial components.
+    Ss = Sn+St
+
+    # Integrating over the image space.
+    int_Sn = np.sum(Sn)
+    int_St = np.sum(St)
+    int_Ss = np.sum(Ss)
+    
+    return(Sn, St, Ss)
+
 
 
 
