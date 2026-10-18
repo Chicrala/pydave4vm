@@ -43,7 +43,7 @@ def calculate_dave4vm(magvm,wsize):
     nw = int(2*int(wsize/2)+1)
         
     # Creating a numpy array based on the windowsize.
-    nw2 = np.subtract(np.array(range(0,nw)),10)
+    nw2 = np.arange(nw) - nw // 2
         
     # Creating the weighting functions.
     x = np.array([nw2,]*nw)*mag_dic['dx']
